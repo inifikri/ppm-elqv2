@@ -1,0 +1,247 @@
+@import 'tailwindcss';
+
+@import 'tw-animate-css';
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --font-sans:
+        'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --radius-control: 0.375rem;
+    --radius-card: 0.5rem;
+    --radius-modal: 0.75rem;
+    --radius-bar: 0.625rem;
+    --text-xs: 0.75rem;
+    --text-sm: 0.8125rem;
+    --text-caption: 0.6875rem;
+    --text-caption--line-height: 1rem;
+
+    --spacing-control: 2rem;
+    --spacing-control-sm: 1.75rem;
+    --spacing-field: 2.25rem;
+    --spacing-touch: 2.75rem;
+
+    --radius-lg: var(--radius);
+    --radius-md: 0.5rem;
+    --radius-sm: 0.375rem;
+
+    --shadow-overlay:
+        0 8px 24px -6px rgb(15 23 42 / 0.12),
+        0 2px 6px -2px rgb(15 23 42 / 0.08);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-surface: var(--surface);
+    --color-surface-elevated: var(--surface-elevated);
+    --color-text-secondary: var(--text-secondary);
+    --color-text-muted: var(--text-muted);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-destructive-subtle: var(--destructive-subtle);
+    --color-destructive-subtle-foreground: var(--destructive-subtle-foreground);
+
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-success-subtle: var(--success-subtle);
+    --color-success-subtle-foreground: var(--success-subtle-foreground);
+
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-warning-subtle: var(--warning-subtle);
+    --color-warning-subtle-foreground: var(--warning-subtle-foreground);
+
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+    --color-info-subtle: var(--info-subtle);
+    --color-info-subtle-foreground: var(--info-subtle-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+    color-scheme: light;
+    --surface: white;
+    --surface-elevated: white;
+    --text-secondary: var(--color-slate-600);
+    --text-muted: var(--color-slate-500);
+    --background: var(--color-slate-50);
+    --foreground: var(--color-slate-900);
+    --card: var(--surface);
+    --card-foreground: var(--color-slate-900);
+    --popover: var(--surface-elevated);
+    --popover-foreground: var(--color-slate-900);
+    --primary: var(--color-emerald-600);
+    --primary-foreground: white;
+    --secondary: var(--color-slate-100);
+    --secondary-foreground: var(--color-slate-900);
+    --muted: var(--color-slate-100);
+    --muted-foreground: var(--color-slate-600);
+    --accent: var(--color-emerald-50);
+    --accent-foreground: var(--color-emerald-700);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.985 0 0);
+    --destructive-subtle: oklch(0.971 0.013 17);
+    --destructive-subtle-foreground: oklch(0.45 0.18 27);
+    --success: oklch(0.627 0.17 149);
+    --success-foreground: oklch(0.985 0 0);
+    --success-subtle: oklch(0.962 0.044 156);
+    --success-subtle-foreground: oklch(0.44 0.12 152);
+    --warning: oklch(0.666 0.179 58);
+    --warning-foreground: oklch(0.985 0 0);
+    --warning-subtle: oklch(0.962 0.059 96);
+    --warning-subtle-foreground: oklch(0.48 0.12 55);
+    --info: oklch(0.588 0.158 241);
+    --info-foreground: oklch(0.985 0 0);
+    --info-subtle: oklch(0.951 0.026 237);
+    --info-subtle-foreground: oklch(0.44 0.11 242);
+    --border: var(--color-slate-200);
+    --input: var(--color-slate-400);
+    --ring: var(--color-emerald-500);
+    --chart-1: oklch(0.546 0.245 262.9);
+    --chart-2: oklch(0.85 0.15 90);
+    --chart-3: oklch(0.6 0.12 165);
+    --chart-4: oklch(0.58 0.14 235);
+    --chart-5: oklch(0.65 0.17 50);
+    --radius: 0.5rem;
+    --sidebar: var(--surface);
+    --sidebar-foreground: var(--text-secondary);
+    --sidebar-primary: var(--color-emerald-600);
+    --sidebar-primary-foreground: white;
+    --sidebar-accent: var(--color-emerald-50);
+    --sidebar-accent-foreground: var(--color-emerald-700);
+    --sidebar-border: var(--color-slate-200);
+    --sidebar-ring: var(--color-emerald-500);
+}
+
+.dark {
+    color-scheme: dark;
+    --surface: var(--color-slate-900);
+    --surface-elevated: var(--color-slate-800);
+    --text-secondary: var(--color-slate-300);
+    --text-muted: var(--color-slate-400);
+    --background: var(--color-slate-950);
+    --foreground: var(--color-slate-50);
+    --card: var(--surface);
+    --card-foreground: var(--color-slate-50);
+    --popover: var(--surface-elevated);
+    --popover-foreground: var(--color-slate-50);
+    --primary: var(--color-emerald-400);
+    --primary-foreground: var(--color-slate-950);
+    --secondary: var(--color-slate-800);
+    --secondary-foreground: var(--color-slate-50);
+    --muted: var(--color-slate-800);
+    --muted-foreground: var(--text-muted);
+    --accent: var(--color-emerald-950);
+    --accent-foreground: var(--color-emerald-200);
+    --destructive: oklch(0.65 0.2 25);
+    --destructive-foreground: oklch(0.985 0 0);
+    --destructive-subtle: oklch(0.26 0.06 25);
+    --destructive-subtle-foreground: oklch(0.85 0.1 22);
+    --success: oklch(0.7 0.17 149);
+    --success-foreground: oklch(0.15 0.02 265);
+    --success-subtle: oklch(0.27 0.05 152);
+    --success-subtle-foreground: oklch(0.86 0.12 154);
+    --warning: oklch(0.75 0.16 70);
+    --warning-foreground: oklch(0.15 0.02 265);
+    --warning-subtle: oklch(0.29 0.05 70);
+    --warning-subtle-foreground: oklch(0.88 0.12 85);
+    --info: oklch(0.7 0.14 235);
+    --info-foreground: oklch(0.15 0.02 265);
+    --info-subtle: oklch(0.27 0.05 238);
+    --info-subtle-foreground: oklch(0.86 0.08 230);
+    --border: var(--color-slate-800);
+    --input: var(--color-slate-600);
+    --ring: var(--color-emerald-400);
+    --chart-1: oklch(0.65 0.2 262.9);
+    --chart-2: oklch(0.85 0.15 90);
+    --chart-3: oklch(0.7 0.14 165);
+    --chart-4: oklch(0.68 0.14 235);
+    --chart-5: oklch(0.72 0.17 50);
+    --sidebar: var(--surface);
+    --sidebar-foreground: var(--text-secondary);
+    --sidebar-primary: var(--color-emerald-400);
+    --sidebar-primary-foreground: var(--color-slate-950);
+    --sidebar-accent: var(--color-slate-800);
+    --sidebar-accent-foreground: var(--color-emerald-200);
+    --sidebar-border: var(--color-slate-800);
+    --sidebar-ring: var(--color-emerald-400);
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    html {
+        font-size: 16px;
+        -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+        @apply bg-background text-sm leading-normal text-foreground;
+        font-feature-settings: 'cv11', 'ss01';
+    }
+
+    /* One icon set (Lucide outline): 16px, thin stroke. Utilities (size-*) override. */
+    svg.lucide {
+        width: 1rem;
+        height: 1rem;
+        stroke-width: 1.5;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        ::before,
+        ::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+}

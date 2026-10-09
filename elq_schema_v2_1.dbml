@@ -1,0 +1,522 @@
+// =====================================================================
+// ELQ Revamp - Normalized Target Schema  (v2.1)
+// Target : Laravel 13 / PHP 8.3 / MySQL 8.4 LTS
+// Status : DRAFT v2.1 - memuat jawaban Manager atas butir terbuka v2.0.
+//          Sisa asumsi/butir terbuka ditandai Q-n (lihat bawah).
+// =====================================================================
+//
+// KEPUTUSAN YANG SUDAH DITETAPKAN
+//   D-1  Durasi default kedaluwarsa DIHILANGKAN. Status akun = boolean
+//        users.is_active (aktif / nonaktif). Konsep 'expired' dan kolom
+//        access_expires_at DIHAPUS.
+//   D-2  Konversi data legacy -> aktif / nonaktif (users.active -> is_active).
+//   D-3  CRUD Group TIDAK dibutuhkan. Role tetap (seed): admin, participant.
+//   D-4  Retensi & purge LOG diatur lewat menu setting (tabel settings).
+//        (Retensi/purge PENGGUNA tetap ditunda.)
+//   D-5  Verifikasi email WAJIB untuk peserta baru sebelum login.
+//   D-6  Akun nonaktif menolak login; data tetap tersimpan.
+//   D-7  Edit/hapus pertanyaan berjawab: alert bersifat INFORMASI (bukan konfirmasi).
+//   D-8  Log: nilai jawaban TIDAK dicatat, hanya peristiwa submit.
+//   D-9  Fitur Lupa Password & Reset Password DISEDIAKAN.
+//   D-10 Share Result = dokumen PDF (nilai + grafik), dikirim via email
+//        terdaftar atau diunduh. PDF dibuat saat dibutuhkan (tidak disimpan).
+//   D-11 Master companies, log status email, logging seluruh aktivitas,
+//        backup manual/restore manual via phpMyAdmin (keputusan sebelumnya).
+//
+// PERUBAHAN v2.0 -> v2.1
+//   users.status                     -> users.is_active (boolean)
+//   participant_profiles.access_expires_at -> DIHAPUS
+//   password_reset_tokens            -> DITAMBAHKAN (tabel bawaan Laravel,
+//                                       pengganti forgotten_password_* legacy)
+//   settings                         -> kini berisi pengaturan purge/retensi log
+//   email_logs.type                  -> + result_share (kirim PDF hasil)
+//   roles/permissions                -> struktur tetap; tanpa CRUD Group
+//
+// PEMETAAN LAMA -> BARU
+//   users               -> users + participant_profiles (+ companies)
+//                          (active -> is_active; expired & token Ion Auth dibuang)
+//   groups, users_groups-> roles, model_has_roles (spatie, package-generated)
+//   users_emails        -> raters   (role boss / subordinate)
+//   results             -> raters   (submitted_at; self = rater role 'self')
+//   results_detail      -> answers
+//   dimensions          -> dimensions
+//   subdimensions       -> sub_dimensions
+//   questions           -> questions
+//   login_attempts      -> DIHAPUS (Laravel RateLimiter; percobaan gagal
+//                          dicatat ke activity_log)
+//   peserta, kepribadian, kepribadian_groups (DISC)
+//                       -> OUT OF SCOPE (arsipkan dump, jangan dimigrasi)
+//   (BARU)              -> settings, email_logs, activity_log,
+//                          password_reset_tokens
+//
+// Tabel infrastruktur Laravel (dibuat migration bawaan, tidak ditulis
+// manual): sessions, jobs, failed_jobs, job_batches.
+//
+// BUTIR TERBUKA / ASUMSI (butuh konfirmasi):
+//   Q-1  Akun legacy dengan tanggal expired yang sudah lewat -> is_active = false?
+//        (asumsi: ya)
+//   Q-2  Kelola Hak Akses Role tetap diperlukan setelah CRUD Group dikeluarkan?
+//        (asumsi: ya, untuk mengatur permission role participant; admin terkunci)
+//   Q-3  Penerima PDF hasil = email akun peserta yang dinilai saja? (asumsi: ya)
+//   Q-4  Akun yang dibuat admin langsung terverifikasi? (asumsi: ya)
+//   Q-5  Nilai awal pengaturan purge log (asumsi: nonaktif sampai diatur admin)
+// =====================================================================
+
+Project elq_revamp {
+  database_type: 'MySQL'
+  Note: '''
+  Konvensi: engine InnoDB, charset utf8mb4, collation utf8mb4_unicode_ci.
+  Semua id/foreign key = BIGINT UNSIGNED (Laravel id()/foreignId()).
+  Index untuk FK dibuat otomatis oleh foreignId()->constrained().
+  Enum disimpan sebagai VARCHAR + PHP backed enum + CHECK (bukan ENUM MySQL,
+  agar mudah diubah tanpa ALTER berat).
+  '''
+}
+
+// ---------------------------------------------------------------------
+// IDENTITY
+// ---------------------------------------------------------------------
+
+Table users {
+  id bigint [pk, increment]
+  name varchar(255) [not null, note: 'legacy: full_name (nullable di legacy -> isi fallback saat migrasi)']
+  email varchar(255) [not null, unique, note: 'legacy: email. Simpan lowercase']
+  phone varchar(20) [null]
+  password varchar(255) [not null, note: 'hash bcrypt legacy tetap valid; rehash otomatis saat login bila cost berbeda']
+  email_verified_at timestamp [null, note: 'WAJIB terisi sebelum peserta baru dapat login (D-5). Migrasi: isi untuk user legacy aktif agar tidak perlu verifikasi ulang. Q-4: akun buatan admin langsung terisi']
+  remember_token varchar(100) [null, note: 'pengganti remember_selector + remember_code']
+  is_active boolean [not null, default: true, note: 'status akun: true = aktif, false = nonaktif (D-1). Legacy: active (1/0). Nonaktif menolak login']
+  last_login_at timestamp [null, note: 'legacy: last_login (unix ts)']
+  created_at timestamp [null, note: 'legacy: created_on (unix ts)']
+  updated_at timestamp [null]
+  deleted_at timestamp [null, note: 'soft delete: cegah kehilangan data hasil assessment saat user dihapus (FR-023)']
+
+  indexes {
+    is_active [name: 'users_is_active_idx']
+  }
+
+  Note: '''
+  Hanya identitas + autentikasi (Admin & Peserta).
+  DIBUANG dari legacy: ip_address, username, activation_selector/code,
+  forgotten_password_selector/code/time (-> password_reset_tokens),
+  remember_selector/code, company, position, expired.
+  (company & position -> participant_profiles; expired DIHAPUS, D-1.)
+  Role via spatie (model_has_roles), bukan tabel groups.
+
+  STATUS AKUN (D-1, D-6):
+  - Boolean is_active, diubah MANUAL oleh admin (FR-023). Tidak ada proses
+    otomatis berbasis tanggal, tidak ada durasi default.
+  - is_active = false menolak login. Data & hasil assessment tetap tersimpan
+    dan terlihat oleh admin. Link penilai TIDAK terpengaruh.
+  - Konversi legacy (D-2): active = 1 -> true; active = 0 -> false.
+    Q-1: tanggal expired legacy yang sudah lewat -> false (asumsi).
+  - Perubahan status dicatat otomatis ke activity_log.
+
+  VERIFIKASI EMAIL (D-5): peserta baru wajib verifikasi sebelum login.
+  User legacy dimigrasi dengan email_verified_at terisi.
+
+  Soft delete + unique email = email tidak bisa dipakai daftar ulang
+  selama baris soft-deleted masih ada. Retensi/purge PENGGUNA masih
+  DITUNDA - catat sebagai backlog.
+  '''
+}
+
+Table participant_profiles {
+  id bigint [pk, increment]
+  user_id bigint [not null, unique, note: '1:1 dengan users. Hanya user ber-role Peserta yang punya baris']
+  company_id bigint [not null]
+  position varchar(100) [not null, note: 'legacy: position varchar(50), dilebarkan']
+  created_at timestamp [null]
+  updated_at timestamp [null]
+
+  Note: '''
+  Dipisah dari users karena company/position hanya relevan untuk Peserta
+  (di legacy kolom ini NOT NULL untuk Admin juga -> data sampah).
+  v2.1: access_expires_at DIHAPUS (kedaluwarsa tidak lagi dipakai, D-1).
+  '''
+}
+
+Table companies {
+  id bigint [pk, increment]
+  name varchar(255) [not null, unique, note: 'unique case-insensitive (collation ci)']
+  created_at timestamp [null]
+  updated_at timestamp [null]
+
+  Note: '''
+  DISETUJUI (keputusan 3). Menghilangkan duplikasi string users.company
+  (filter/grup per perusahaan, FR-030/031).
+  Prasyarat migrasi: data cleaning (trim, "PT." vs "PT", casing) + review
+  manual sebelum data users dimigrasi.
+  Tidak ada FR CRUD Company - cukup firstOrCreate saat registrasi.
+  '''
+}
+
+Table password_reset_tokens {
+  email varchar(255) [pk, note: 'relasi logis ke users.email; tanpa FK (desain bawaan Laravel)']
+  token varchar(255) [not null, note: 'hash token reset; sekali pakai dan berumur terbatas (konfigurasi Laravel)']
+  created_at timestamp [null]
+
+  Note: '''
+  D-9. Tabel bawaan Laravel, menggantikan kolom forgotten_password_* Ion Auth
+  (token legacy TIDAK dimigrasi). Dukung FR Lupa Password & Reset Password.
+  Token dihapus setelah dipakai. Permintaan reset dibatasi rate limiting.
+  Pengiriman email reset dicatat di email_logs (type = password_reset).
+  '''
+}
+
+// ---------------------------------------------------------------------
+// ASSESSMENT (360)
+// ---------------------------------------------------------------------
+
+Table raters {
+  id bigint [pk, increment]
+  ulid char(26) [not null, unique, note: 'route key untuk Signed URL (bukan id berurut). Regenerate = mencabut link lama']
+  participant_id bigint [not null, note: 'FK ke users.id (peserta yang dinilai)']
+  role varchar(20) [not null, note: 'self | boss | subordinate']
+  email varchar(255) [null, note: 'NULL untuk role self; wajib untuk boss/subordinate']
+  submitted_at timestamp [null, note: 'NULL = belum mengisi; terisi = sudah mengisi, final & immutable (FR-016). legacy: results.result_date']
+  legacy_code varchar(100) [null, unique, note: 'SEMENTARA: agar link email legacy yang sudah terkirim tetap valid selama masa transisi. DROP setelah cutover']
+  created_at timestamp [null]
+  updated_at timestamp [null]
+
+  indexes {
+    (participant_id, email) [unique, name: 'raters_participant_email_unique']
+    (participant_id, role) [name: 'raters_participant_role_idx']
+  }
+
+  Note: '''
+  Menggabungkan users_emails + results (relasi 1:1 per penilai).
+  - Menghapus hack results.result_user_email_id = 0 untuk self
+    (self kini baris biasa, role = self).
+  - Menghapus results.result_type (redundan dengan users_emails.type;
+    pelanggaran 3NF) dan results.result_user_id (redundan dengan
+    users_emails.user_id).
+  - Token manual `code` diganti Laravel Signed URL (stateless, HMAC).
+
+  v2:
+  - invitation_sent_at DIHAPUS. Status & waktu pengiriman undangan kini
+    di email_logs (keputusan 4) agar mendukung retry/gagal/riwayat kirim ulang.
+  - Link penilai tidak punya masa kedaluwarsa (keputusan 2). Status link
+    cukup submitted_at: NULL = belum mengisi (link bisa dipakai),
+    terisi = sudah mengisi (tampilkan halaman "assessment selesai", FR-042).
+    Perubahan users.status peserta tidak memengaruhi link penilai.
+
+  Constraint (tulis di migration, DBML tidak mendukung CHECK):
+    CHECK (role IN ('self','boss','subordinate'))
+    CHECK ((role = 'self' AND email IS NULL) OR (role <> 'self' AND email IS NOT NULL))
+  Unique (participant_id, email) menjamin FR-008 (email tidak boleh sama);
+  MySQL mengizinkan banyak NULL, jadi baris self tidak bentrok.
+  Kardinalitas 1 self / 1 boss / 3 subordinate ditegakkan di FormRequest +
+  Action class (bukan di DB agar angka 3 tidak di-hardcode).
+  Bila ingin enforce di DB: generated column + unique (opsional).
+  Legacy menerima duplikat results per penilai -> dedupe saat migrasi
+  (ambil submit paling awal, karena submit bersifat final).
+  '''
+}
+
+Table answers {
+  id bigint [pk, increment]
+  rater_id bigint [not null]
+  question_id bigint [not null]
+  value tinyint [not null, note: 'skala Likert 1-6']
+
+  indexes {
+    (rater_id, question_id) [unique, name: 'answers_rater_question_unique']
+    question_id [name: 'answers_question_idx']
+  }
+
+  Note: '''
+  legacy: results_detail. Unique (rater_id, question_id) mencegah jawaban ganda.
+  Constraint di migration: CHECK (value BETWEEN 1 AND 6).
+  Kelengkapan 39 jawaban (FR-014) divalidasi di aplikasi dan diinsert dalam
+  satu transaksi bersama pengisian raters.submitted_at.
+  Nilai rata-rata dimensi/sub-dimensi (FR-017/018) TIDAK disimpan (dihitung
+  oleh ScoreCalculator service) agar tidak ada data turunan yang bisa basi.
+  Logging: nilai jawaban TIDAK dicatat ke activity_log (hanya peristiwa
+  submit) - lihat catatan activity_log.
+  '''
+}
+
+// ---------------------------------------------------------------------
+// MASTER KUESIONER
+// ---------------------------------------------------------------------
+
+Table dimensions {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique, note: 'Task, People, Change oriented']
+  sort_order smallint [not null, default: 0, note: 'baru; isi dari urutan dimension_id legacy']
+  is_active boolean [not null, default: true, note: 'legacy: active (INT -> boolean)']
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
+
+Table sub_dimensions {
+  id bigint [pk, increment]
+  dimension_id bigint [not null]
+  name varchar(100) [not null]
+  sort_order smallint [not null, default: 0]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+  deleted_at timestamp [null]
+
+  indexes {
+    (dimension_id, name) [unique, name: 'sub_dimensions_dimension_name_unique']
+  }
+
+  Note: 'legacy: subdimensions. FK legacy ON DELETE CASCADE diganti RESTRICT (cascade dari master berisiko menghapus riwayat).'
+}
+
+Table questions {
+  id bigint [pk, increment]
+  sub_dimension_id bigint [not null, note: 'dimensi diturunkan via sub_dimensions (3NF). Boleh diganti walau sudah ada jawaban (keputusan 5)']
+  text text [not null, note: 'legacy: question_text. Boleh diedit walau sudah ada jawaban (keputusan 5)']
+  sort_order smallint [not null, default: 0, note: 'legacy tidak punya kolom urut; isi dari question_id']
+  created_at timestamp [null]
+  updated_at timestamp [null]
+  deleted_at timestamp [null, note: 'soft delete agar answers historis tetap punya referensi']
+
+  Note: '''
+  KEPUTUSAN 5: edit teks dan ganti sub-dimensi tetap diizinkan setelah ada
+  jawaban. Aplikasi hanya menampilkan ALERT saat save/submit (tanpa blokir,
+  tanpa versioning kuesioner).
+  Konsekuensi yang diterima: hasil historis ikut berubah makna/pengelompokan
+  (rata-rata sub-dimensi/dimensi dihitung ulang dari struktur terkini).
+  Satu-satunya jejak perubahan = activity_log (teks lama/baru, sub_dimension_id
+  lama/baru). Pastikan model Question mencatat atribut text & sub_dimension_id.
+  Menghapus (soft delete) pertanyaan yang sudah punya jawaban: belum
+  diputuskan - ikuti alert yang sama (usulan).
+  '''
+}
+
+// ---------------------------------------------------------------------
+// KONFIGURASI & LOG (BARU v2)
+// ---------------------------------------------------------------------
+
+Table settings {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique, note: 'kunci konfigurasi (daftar di Note)']
+  value text [null, note: 'nilai (string/JSON); casting dilakukan di aplikasi']
+  created_at timestamp [null]
+  updated_at timestamp [null]
+
+  Note: '''
+  Key-value konfigurasi aplikasi yang diubah admin lewat menu Setting (FR-051).
+  Kolom diberi nama `name` (bukan `key`) agar tidak bentrok dengan reserved
+  word MySQL. Perubahan nilai dicatat ke activity_log.
+
+  Kunci yang digunakan saat ini (D-4):
+    activity_log_purge_enabled   boolean  - purge activity_log aktif/nonaktif
+    activity_log_retention_days  integer  - masa simpan activity_log (hari)
+    email_log_purge_enabled      boolean  - purge email_logs aktif/nonaktif
+    email_log_retention_days     integer  - masa simpan email_logs (hari)
+  Q-5: asumsi nilai awal purge = nonaktif sampai admin mengatur masa simpan.
+  Purge dijalankan scheduler harian; ringkasan hasil (jumlah baris) dicatat
+  ke activity_log. Penghapusan bersifat PERMANEN - backup manual dahulu.
+  Retensi/purge PENGGUNA tidak termasuk (ditunda).
+  '''
+}
+
+Table email_logs {
+  id bigint [pk, increment]
+  type varchar(30) [not null, note: 'rater_invitation | email_verification | password_reset | result_share (nilai diatur PHP backed enum)']
+  recipient_email varchar(255) [not null]
+  rater_id bigint [null, note: 'terisi untuk rater_invitation']
+  user_id bigint [null, note: 'terisi untuk email_verification / password_reset / result_share (peserta penerima)']
+  status varchar(20) [not null, default: 'queued', note: 'queued | sent | failed']
+  attempts tinyint [not null, default: 0, note: 'jumlah percobaan kirim (unsigned di migration)']
+  message_id varchar(255) [null, note: 'Message-ID dari mailer, bila tersedia']
+  error_message text [null, note: 'ringkasan error saat failed; tanpa data sensitif']
+  queued_at timestamp [null]
+  sent_at timestamp [null]
+  failed_at timestamp [null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+
+  indexes {
+    (status, created_at) [name: 'email_logs_status_created_idx']
+    rater_id [name: 'email_logs_rater_idx']
+    user_id [name: 'email_logs_user_idx']
+    recipient_email [name: 'email_logs_recipient_idx']
+  }
+
+  Note: '''
+  KEPUTUSAN 4. Satu baris per upaya kirim (kirim ulang = baris baru, riwayat
+  utuh). Status diperbarui via event Laravel Mail/Queue.
+  TIDAK menyimpan isi email maupun URL bertanda tangan (setara kredensial).
+  Konstrain di migration: CHECK type & status sesuai nilai di atas.
+  Admin dapat melihat daftar & kirim ulang email gagal.
+  email_logs = status pengiriman; activity_log = siapa yang memicu.
+  Retensi/purge: diatur lewat settings (email_log_*), D-4.
+  result_share: pengiriman PDF hasil assessment. Lampiran PDF dibuat saat
+  kirim (tidak disimpan) dan TIDAK dicatat di log.
+  '''
+}
+
+// ---------------------------------------------------------------------
+// AUDIT TRAIL - spatie/laravel-activitylog (PACKAGE-GENERATED)
+// Struktur kolom mengikuti migration package versi terpasang; di bawah
+// adalah gambaran untuk dokumentasi.
+// ---------------------------------------------------------------------
+
+Table activity_log {
+  id bigint [pk, increment]
+  log_name varchar(255) [null, note: 'kategori: auth, crud, email, assessment, dll']
+  description text [not null]
+  subject_type varchar(255) [null, note: 'polimorfik; tanpa FK (desain package)']
+  subject_id bigint [null]
+  event varchar(255) [null, note: 'created | updated | deleted | login | logout | dll']
+  causer_type varchar(255) [null]
+  causer_id bigint [null, note: 'NULL untuk aktor tanpa akun (penilai via Signed URL) atau sistem']
+  properties json [null, note: 'old/new nilai atribut yang dilog']
+  batch_uuid char(36) [null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+
+  indexes {
+    log_name [name: 'activity_log_log_name_index']
+    (subject_type, subject_id) [name: 'subject']
+    (causer_type, causer_id) [name: 'causer']
+  }
+
+  Note: '''
+  KEPUTUSAN 9: mencatat aktivitas CRUD (model ber-trait LogsActivity),
+  login, logout, login gagal (pengganti login_attempts), submit assessment,
+  kirim email (termasuk kirim PDF hasil), lupa/reset password, perubahan
+  status akun, perubahan pengaturan, hak akses role, dan hasil purge log.
+  BATASAN (diterapkan di kode):
+  - JANGAN log nilai jawaban per pertanyaan (hanya peristiwa submit) -
+    menghindari log berlebih dan terbukanya identitas penilai atasan/bawahan.
+  - JANGAN log password, token, remember_token, URL bertanda tangan
+    (gunakan logOnly / logExcept pada setiap model).
+  - Aktor penilai (tanpa akun) dicatat lewat properties (rater id), bukan causer.
+  Halaman audit admin: read-only, filter user/aksi/tanggal.
+  Retensi/purge: diatur lewat settings (activity_log_*), D-4.
+  '''
+}
+
+// ---------------------------------------------------------------------
+// RBAC - spatie/laravel-permission (PACKAGE-GENERATED, jangan edit manual)
+// Role yang diseed dan TETAP: admin, participant.
+//
+// D-3: CRUD Group (membuat/menghapus role) TIDAK dibutuhkan; role tidak
+// dapat ditambah, dihapus, atau diganti nama lewat UI.
+// Q-2 (asumsi): menu Kelola Hak Akses Role (matriks permission per role)
+// dipertahankan. Role admin selalu memiliki semua permission dan terkunci
+// (mencegah admin mengunci dirinya sendiri). Daftar permission di kode.
+// Perlindungan dilakukan di Policy aplikasi; tidak ada perubahan skema.
+// Role "Penilai" tidak ada - atasan/bawahan tanpa akun, akses via Signed URL
+// (FR-040).
+// ---------------------------------------------------------------------
+
+Table roles {
+  id bigint [pk, increment]
+  name varchar(255) [not null]
+  guard_name varchar(255) [not null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+
+  indexes {
+    (name, guard_name) [unique]
+  }
+}
+
+Table permissions {
+  id bigint [pk, increment]
+  name varchar(255) [not null]
+  guard_name varchar(255) [not null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+
+  indexes {
+    (name, guard_name) [unique]
+  }
+}
+
+Table model_has_roles {
+  role_id bigint [not null]
+  model_type varchar(255) [not null]
+  model_id bigint [not null, note: 'polimorfik ke users.id - tanpa FK (desain package)']
+
+  indexes {
+    (role_id, model_id, model_type) [pk]
+    (model_id, model_type)
+  }
+}
+
+Table model_has_permissions {
+  permission_id bigint [not null]
+  model_type varchar(255) [not null]
+  model_id bigint [not null]
+
+  indexes {
+    (permission_id, model_id, model_type) [pk]
+    (model_id, model_type)
+  }
+}
+
+Table role_has_permissions {
+  permission_id bigint [not null]
+  role_id bigint [not null]
+
+  indexes {
+    (permission_id, role_id) [pk]
+  }
+}
+
+// ---------------------------------------------------------------------
+// RELATIONSHIPS
+// ---------------------------------------------------------------------
+
+Ref: participant_profiles.user_id - users.id [delete: cascade]
+Ref: participant_profiles.company_id > companies.id [delete: restrict]
+
+Ref: raters.participant_id > users.id [delete: restrict]
+Ref: answers.rater_id > raters.id [delete: cascade]
+Ref: answers.question_id > questions.id [delete: restrict]
+
+Ref: sub_dimensions.dimension_id > dimensions.id [delete: restrict]
+Ref: questions.sub_dimension_id > sub_dimensions.id [delete: restrict]
+
+Ref: email_logs.rater_id > raters.id [delete: set null]
+Ref: email_logs.user_id > users.id [delete: set null]
+
+Ref: model_has_roles.role_id > roles.id [delete: cascade]
+Ref: model_has_permissions.permission_id > permissions.id [delete: cascade]
+Ref: role_has_permissions.permission_id > permissions.id [delete: cascade]
+Ref: role_has_permissions.role_id > roles.id [delete: cascade]
+
+// ---------------------------------------------------------------------
+// GROUPS (untuk tampilan diagram)
+// ---------------------------------------------------------------------
+
+TableGroup identity {
+  users
+  participant_profiles
+  companies
+  password_reset_tokens
+}
+
+TableGroup assessment {
+  raters
+  answers
+}
+
+TableGroup questionnaire_master {
+  dimensions
+  sub_dimensions
+  questions
+}
+
+TableGroup config_and_logs {
+  settings
+  email_logs
+  activity_log
+}
+
+TableGroup rbac_spatie {
+  roles
+  permissions
+  model_has_roles
+  model_has_permissions
+  role_has_permissions
+}

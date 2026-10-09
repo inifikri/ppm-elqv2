@@ -1,0 +1,26 @@
+{
+    "_format": "dimensions[].sub_dimensions[].questions[]; sort_order & is_active opsional (default: urutan array, true). Salin ke questionnaire.json lalu isi konten asli.",
+    "dimensions": [
+        {
+            "name": "Dimensi Contoh A (PLACEHOLDER)",
+            "sort_order": 1,
+            "is_active": true,
+            "sub_dimensions": [
+                {
+                    "name": "Sub-dimensi Contoh A1 (PLACEHOLDER)",
+                    "sort_order": 1,
+                    "questions": [
+                        {
+                            "sort_order": 1,
+                            "text": "Pertanyaan contoh 1 (PLACEHOLDER, bukan konten asli)."
+                        },
+                        {
+                            "sort_order": 2,
+                            "text": "Pertanyaan contoh 2 (PLACEHOLDER, bukan konten asli)."
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
