@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Pencil, X } from 'lucide-react';
+import { FileBarChart2, Pencil, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Drawer } from '@/components/drawer';
@@ -101,6 +101,13 @@ export function UserDetailDrawer({
                     <Button variant="outline" icon={X} onClick={onClose}>
                         Tutup
                     </Button>
+                    {userId !== null && user?.role === 'participant' && (
+                        <Button asChild variant="outline" icon={FileBarChart2}>
+                            <Link href={`/admin/participants/${userId}/result`}>
+                                Lihat Hasil
+                            </Link>
+                        </Button>
+                    )}
                     {userId !== null && (
                         <Button asChild icon={Pencil}>
                             <Link href={edit(userId)}>Edit</Link>

@@ -1,5 +1,7 @@
 import {
+    Building2,
     CircleQuestionMark,
+    FileBarChart2,
     Layers,
     LayoutGrid,
     Network,
@@ -17,6 +19,7 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { dashboard } from "@/routes";
+import { index as companiesIndex } from "@/routes/admin/companies";
 import { index as domainsIndex } from "@/routes/admin/domains";
 import { index as questionsIndex } from "@/routes/admin/questions";
 import { index as subDomainsIndex } from "@/routes/admin/sub-domains";
@@ -30,8 +33,18 @@ export function AppSidebar() {
     const { auth, menuCounts } = usePage().props;
 
     const { can } = auth;
+    const assessmentItems: NavGroup["items"] = [];
     const masterItems: NavGroup["items"] = [];
     const logItems: NavGroup["items"] = [];
+
+    if (can.view_results) {
+        assessmentItems.push({
+            title: "Hasil Asesmen",
+            href: "/admin/results",
+            icon: FileBarChart2,
+            exact: false,
+        });
+    }
 
     if (can.manage_dimensions) {
         masterItems.push({
@@ -74,6 +87,7 @@ export function AppSidebar() {
                 },
             ],
         },
+        { label: "Asesmen", items: assessmentItems },
         { label: "Master Data", items: masterItems },
         {
             label: "Administrasi",
@@ -83,6 +97,12 @@ export function AppSidebar() {
                           title: "Pengguna",
                           href: usersIndex(),
                           icon: Users,
+                          exact: false,
+                      },
+                      {
+                          title: "Perusahaan",
+                          href: companiesIndex(),
+                          icon: Building2,
                           exact: false,
                       },
                   ]

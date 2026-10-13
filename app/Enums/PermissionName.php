@@ -21,6 +21,8 @@ enum PermissionName: string
     case SettingsManage = 'settings.manage';
     case RatersManageOwn = 'raters.manage-own';
     case AssessmentFillSelf = 'assessment.fill-self';
+    case CompanyManage = 'company.manage';
+    case ParticipantManage = 'participant.manage';
 
     public function group(): string
     {
@@ -30,6 +32,7 @@ enum PermissionName: string
             self::ParticipantsView, self::ResultsView, self::ResultsShare, self::ResultsExport => 'Hasil',
             self::ActivityLogView, self::EmailLogManage, self::SettingsManage => 'Sistem',
             self::RatersManageOwn, self::AssessmentFillSelf => 'Assessment',
+            self::CompanyManage, self::ParticipantManage => 'Company',
         };
     }
 
@@ -50,6 +53,8 @@ enum PermissionName: string
             self::SettingsManage => 'Kelola pengaturan',
             self::RatersManageOwn => 'Kelola penilai sendiri',
             self::AssessmentFillSelf => 'Isi assessment sendiri',
+            self::CompanyManage => 'Kelola company',
+            self::ParticipantManage => 'Kelola participant',
         };
     }
 

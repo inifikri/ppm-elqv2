@@ -1,6 +1,7 @@
 import { AppFooter } from '@/components/app-footer';
 import AppLogo from '@/components/app-logo';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { TopbarShell } from '@/components/layout/topbar-shell';
 
 /** No nav: evaluators arrive via signed URL and only do one thing. */
 export default function EvaluatorLayout({
@@ -11,17 +12,18 @@ export default function EvaluatorLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className="flex min-h-screen flex-col bg-background">
-            <header className="border-b bg-surface">
-                <div className="mx-auto flex h-14 w-full max-w-2xl items-center gap-4 px-4">
-                    <AppLogo />
-                    <div className="ml-auto flex items-center gap-2 text-sm text-text-secondary">
+        <div className="flex min-h-[100dvh] flex-col bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary">
+            <TopbarShell
+                maxWidth="2xl"
+                left={<AppLogo />}
+                right={
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         {step}
                         <ThemeToggle />
                     </div>
-                </div>
-            </header>
-            <main className="mx-auto w-full max-w-2xl flex-1 space-y-4 p-4 text-base md:py-8">
+                }
+            />
+            <main className="mx-auto w-full max-w-2xl flex-1 space-y-4 px-4 py-4 text-base sm:px-6 md:py-8">
                 {children}
             </main>
             <AppFooter />

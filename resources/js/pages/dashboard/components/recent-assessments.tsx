@@ -37,6 +37,7 @@ export function RecentAssessments({
                                 </div>
                                 <time
                                     dateTime={item.submitted_at}
+                                    suppressHydrationWarning
                                     className="shrink-0 text-xs text-muted-foreground"
                                 >
                                     {formatRelativeTime(item.submitted_at)}

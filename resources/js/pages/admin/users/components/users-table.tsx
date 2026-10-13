@@ -1,4 +1,4 @@
-import { Eye, Pencil, Trash2, UserCheck, UserX } from 'lucide-react';
+import { Eye, FileBarChart2, Pencil, Trash2, UserCheck, UserX } from 'lucide-react';
 import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { BulkActionBar, type BulkAction } from '@/components/bulk-action-bar';
@@ -15,7 +15,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { cn } from '@/lib/utils';
 import { bulk, destroy, edit } from '@/routes/admin/users';
 import type { ManagedUser } from '@/types';
 import { UserDetailDrawer } from './user-detail-drawer';
@@ -70,7 +69,7 @@ export default function UsersTable({ users }: { users: ManagedUser[] }) {
     ];
 
     return (
-        <div className={cn('space-y-3', selected.size > 0 && 'pb-20')}>
+        <div className="space-y-3">
             <div className="overflow-x-auto rounded-card border bg-card">
                 <Table>
                     <TableHeader className="bg-muted/50 [&_th]:h-11 [&_th]:text-xs [&_th]:font-semibold [&_th]:tracking-wider [&_th]:text-muted-foreground [&_th]:uppercase">
@@ -164,6 +163,21 @@ export default function UsersTable({ users }: { users: ManagedUser[] }) {
                                     />
                                 </TableCell>
                                 <TableCell className="text-right">
+                                    {user.role === 'participant' && (
+                                        <Button
+                                            asChild
+                                            variant="ghost"
+                                            size="icon"
+                                            title="Hasil Assessment"
+                                        >
+                                            <Link
+                                                href={`/admin/participants/${user.id}/result`}
+                                                aria-label={`Lihat hasil assessment ${user.name}`}
+                                            >
+                                                <FileBarChart2 />
+                                            </Link>
+                                        </Button>
+                                    )}
                                     <Button
                                         variant="ghost"
                                         size="icon"

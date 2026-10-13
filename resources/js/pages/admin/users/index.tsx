@@ -78,7 +78,7 @@ export default function UsersIndex({
             />
             <div
                 className={cn(
-                    'space-y-4 transition-opacity',
+                    'space-y-4 pb-20 transition-opacity',
                     loading && 'opacity-60',
                 )}
             >

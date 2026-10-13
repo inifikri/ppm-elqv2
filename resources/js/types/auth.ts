@@ -16,6 +16,10 @@ export type Auth = {
         manage_dimensions: boolean;
         manage_sub_dimensions: boolean;
         manage_questions: boolean;
+        manage_company?: boolean;
+        view_results?: boolean;
+        export_results?: boolean;
+        share_results?: boolean;
     };
 };
 

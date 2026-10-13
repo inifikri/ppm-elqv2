@@ -51,6 +51,10 @@ class HandleInertiaRequests extends Middleware
                     'manage_dimensions' => (bool) $request->user()?->can(PermissionName::DimensionsManage->value),
                     'manage_sub_dimensions' => (bool) $request->user()?->can(PermissionName::SubDimensionsManage->value),
                     'manage_questions' => (bool) $request->user()?->can(PermissionName::QuestionsManage->value),
+                    'manage_company' => (bool) $request->user()?->can(PermissionName::CompanyManage->value),
+                    'view_results' => (bool) $request->user()?->can(PermissionName::ResultsView->value),
+                    'export_results' => (bool) $request->user()?->can(PermissionName::ResultsExport->value),
+                    'share_results' => (bool) $request->user()?->can(PermissionName::ResultsShare->value),
                 ],
             ],
             'notifications' => $request->user()?->can(PermissionName::ParticipantsView->value)

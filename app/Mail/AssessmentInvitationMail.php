@@ -2,9 +2,9 @@
 
 namespace App\Mail;
 
+use App\Models\Rater;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -13,39 +13,32 @@ class AssessmentInvitationMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    /**
-     * Create a new message instance.
-     */
-    public function __construct()
-    {
-        //
-    }
+    public function __construct(
+        public Rater $rater
+    ) {}
 
-    /**
-     * Get the message envelope.
-     */
     public function envelope(): Envelope
     {
+        $participantName = $this->rater->participant?->name ?? 'Rekan Kerja';
+
         return new Envelope(
-            subject: 'Assessment Invitation Mail',
+            subject: "Undangan Penilaian Kepemimpinan 360° - {$participantName}",
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
         return new Content(
-            view: 'view.name',
+            view: 'mail.assessment-invitation',
+            with: [
+                'rater' => $this->rater,
+                'participant' => $this->rater->participant,
+                'roleLabel' => $this->rater->role?->label() ?? 'Penilai',
+                'evaluationUrl' => url("/rater/{$this->rater->ulid}"),
+            ],
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, Attachment>
-     */
     public function attachments(): array
     {
         return [];
