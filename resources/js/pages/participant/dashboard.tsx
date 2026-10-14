@@ -1,7 +1,13 @@
-import { Head } from '@inertiajs/react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Head } from "@inertiajs/react";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
     CheckCircle2,
     Clock,
@@ -12,8 +18,8 @@ import {
     Building2,
     Briefcase,
     Sparkles,
-} from 'lucide-react';
-import type { ParticipantDashboardData } from '@/types/assessment';
+} from "lucide-react";
+import type { ParticipantDashboardData } from "@/types/assessment";
 
 export default function ParticipantDashboard({
     participant,
@@ -21,13 +27,13 @@ export default function ParticipantDashboard({
     evaluators,
 }: ParticipantDashboardData) {
     const formatDate = (dateStr: string | null) => {
-        if (!dateStr) return '-';
-        return new Date(dateStr).toLocaleDateString('id-ID', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
+        if (!dateStr) return "-";
+        return new Date(dateStr).toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
         });
     };
 
@@ -80,11 +86,16 @@ export default function ParticipantDashboard({
                                 Asesmen Mandiri Anda Telah Berhasil Diserahkan
                             </h2>
                             <p className="text-xs text-emerald-800 dark:text-emerald-300/90 leading-relaxed">
-                                Anda telah menyelesaikan 39 butir pertanyaan evaluasi diri pada{' '}
+                                Anda telah menyelesaikan{' '}
+                                {self_assessment.total_questions
+                                    ? `${self_assessment.total_questions} butir pertanyaan`
+                                    : 'seluruh butir pertanyaan'}{' '}
+                                evaluasi diri pada{' '}
                                 <strong className="font-semibold text-foreground">
                                     {formatDate(self_assessment.submitted_at)}
                                 </strong>
-                                . Tanggapan Anda telah tersimpan dengan aman di sistem.
+                                . Tanggapan Anda telah tersimpan dengan aman di
+                                sistem.
                             </p>
                         </div>
                     </div>
@@ -99,14 +110,20 @@ export default function ParticipantDashboard({
                                     Status Pengisian Penilai (Evaluator 360°)
                                 </CardTitle>
                                 <CardDescription className="text-xs text-muted-foreground mt-0.5">
-                                    Undangan penilaian telah dikirimkan ke atasan dan 3 bawahan yang Anda daftarkan.
+                                    Undangan penilaian telah dikirimkan ke
+                                    atasan dan 3 bawahan yang Anda daftarkan.
                                 </CardDescription>
                             </div>
                             <Badge
-                                variant={isAllEvaluatorsComplete ? 'default' : 'secondary'}
+                                variant={
+                                    isAllEvaluatorsComplete
+                                        ? "default"
+                                        : "secondary"
+                                }
                                 className="w-fit text-xs font-semibold py-1 px-2.5"
                             >
-                                {evaluators.total_submitted} dari {evaluators.total_invited} Selesai
+                                {evaluators.total_submitted} dari{" "}
+                                {evaluators.total_invited} Selesai
                             </Badge>
                         </div>
 
@@ -118,7 +135,9 @@ export default function ParticipantDashboard({
                                     style={{
                                         width: `${
                                             evaluators.total_invited > 0
-                                                ? (evaluators.total_submitted / evaluators.total_invited) * 100
+                                                ? (evaluators.total_submitted /
+                                                      evaluators.total_invited) *
+                                                  100
                                                 : 0
                                         }%`,
                                     }}
@@ -143,27 +162,30 @@ export default function ParticipantDashboard({
                                             <p className="font-semibold text-foreground truncate">
                                                 {evaluators.boss.email}
                                             </p>
-                                            <p className="text-[11px] text-muted-foreground">
-                                                Atasan Langsung (1/1)
+                                            <p className="pt-2">
+                                                {evaluators.boss
+                                                    .is_submitted ? (
+                                                    <Badge className="bg-emerald-600 text-white gap-1 hover:bg-emerald-600">
+                                                        <CheckCircle2 className="size-3" />
+                                                        Sudah Mengisi
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="text-muted-foreground gap-1"
+                                                    >
+                                                        <Clock className="size-3" />
+                                                        Menunggu Pengisian
+                                                    </Badge>
+                                                )}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="shrink-0 pl-2">
-                                        {evaluators.boss.is_submitted ? (
-                                            <Badge className="bg-emerald-600 text-white gap-1 hover:bg-emerald-600">
-                                                <CheckCircle2 className="size-3" />
-                                                Sudah Mengisi
-                                            </Badge>
-                                        ) : (
-                                            <Badge variant="outline" className="text-muted-foreground gap-1">
-                                                <Clock className="size-3" />
-                                                Menunggu Pengisian
-                                            </Badge>
-                                        )}
-                                    </div>
                                 </div>
                             ) : (
-                                <p className="text-xs text-muted-foreground italic">Belum ada data atasan.</p>
+                                <p className="text-xs text-muted-foreground italic">
+                                    Belum ada data atasan.
+                                </p>
                             )}
                         </div>
 
@@ -186,23 +208,23 @@ export default function ParticipantDashboard({
                                                 <p className="font-semibold text-foreground truncate">
                                                     {sub.email}
                                                 </p>
-                                                <p className="text-[11px] text-muted-foreground">
-                                                    Bawahan ({idx + 1}/3)
+                                                <p className="pt-2">
+                                                    {sub.is_submitted ? (
+                                                        <Badge className="bg-emerald-600 text-white gap-1 hover:bg-emerald-600">
+                                                            <CheckCircle2 className="size-3" />
+                                                            Sudah Mengisi
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="text-muted-foreground gap-1"
+                                                        >
+                                                            <Clock className="size-3" />
+                                                            Menunggu Pengisian
+                                                        </Badge>
+                                                    )}
                                                 </p>
                                             </div>
-                                        </div>
-                                        <div className="shrink-0 pl-2">
-                                            {sub.is_submitted ? (
-                                                <Badge className="bg-emerald-600 text-white gap-1 hover:bg-emerald-600">
-                                                    <CheckCircle2 className="size-3" />
-                                                    Sudah Mengisi
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="outline" className="text-muted-foreground gap-1">
-                                                    <Clock className="size-3" />
-                                                    Menunggu Pengisian
-                                                </Badge>
-                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -219,13 +241,19 @@ export default function ParticipantDashboard({
                     </AlertTitle>
                     <AlertDescription className="text-xs text-muted-foreground mt-1 space-y-1.5 leading-relaxed">
                         <p>
-                            • Sistem sedang menunggu penyelesaian kuesioner oleh seluruh rekan penilai Anda.
+                            • Sistem sedang menunggu penyelesaian kuesioner oleh
+                            seluruh rekan penilai Anda.
                         </p>
                         <p>
-                            • Demi menjaga integritas dan kerahasiaan evaluasi, skor penilaian individual tidak disajikan kepada peserta (FR-039).
+                            • Demi menjaga integritas dan kerahasiaan evaluasi,
+                            skor penilaian individual tidak disajikan kepada
+                            peserta.
                         </p>
                         <p>
-                            • Laporan komprehensif profil kepemimpinan ELQ 360° akan diproses dan diterbitkan secara resmi oleh konsultan/administrator setelah evaluasi seluruh pihak lengkap.
+                            • Laporan komprehensif profil kepemimpinan ELQ 360°
+                            akan diproses dan diterbitkan secara resmi oleh
+                            konsultan/administrator setelah evaluasi seluruh
+                            pihak lengkap.
                         </p>
                     </AlertDescription>
                 </Alert>

@@ -1,7 +1,6 @@
 import {
     Building2,
     CircleQuestionMark,
-    FileBarChart2,
     Layers,
     LayoutGrid,
     Network,
@@ -37,12 +36,13 @@ export function AppSidebar() {
     const masterItems: NavGroup["items"] = [];
     const logItems: NavGroup["items"] = [];
 
-    if (can.view_results) {
+    if (can.view_participants) {
         assessmentItems.push({
-            title: "Hasil Asesmen",
-            href: "/admin/results",
-            icon: FileBarChart2,
+            title: "Peserta",
+            href: "/admin/participants",
+            icon: Users,
             exact: false,
+            badge: toBadge(menuCounts?.participants, "peserta"),
         });
     }
 

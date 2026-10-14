@@ -124,6 +124,7 @@ export type ParticipantDashboardData = {
     self_assessment: {
         is_submitted: boolean;
         submitted_at: string | null;
+        total_questions?: number;
     };
     evaluators: {
         boss: ParticipantDashboardEvaluator | null;

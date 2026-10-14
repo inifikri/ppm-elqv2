@@ -8,11 +8,18 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Participant\ParticipantAssessmentController;
 use App\Http\Controllers\Participant\ParticipantEvaluatorController;
 use App\Http\Controllers\Participant\ParticipantHomeController;
+use App\Http\Controllers\Rater\RaterEvaluationController;
 use App\Http\Controllers\StyleguideController;
 use App\Http\Middleware\EnsureParticipant;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login')->name('home');
+
+Route::prefix('rater/{ulid}')->name('rater.')->group(function () {
+    Route::get('/', [RaterEvaluationController::class, 'show'])->name('evaluation');
+    Route::post('answers', [RaterEvaluationController::class, 'saveAnswer'])->middleware('throttle:60,1')->name('answers.save');
+    Route::post('submit', [RaterEvaluationController::class, 'submit'])->middleware('throttle:10,1')->name('submit');
+});
 
 Route::post('login/identify', LoginIdentifyController::class)->middleware(['guest', 'throttle:10,1'])->name('login.identify');
 

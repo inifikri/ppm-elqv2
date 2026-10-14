@@ -36,8 +36,10 @@ const STEP_TITLES: Record<number, string> = {
 
 export default function EvaluatorsSetup({
     participantEmail,
+    totalQuestions,
 }: {
     participantEmail: string;
+    totalQuestions?: number;
 }) {
     const [step, setStep] = useState<number>(1);
     const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
@@ -268,7 +270,9 @@ export default function EvaluatorsSetup({
                                 <CardContent className="p-4 space-y-1.5">
                                     <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                                         <Clock className="size-4" />
-                                        <h3 className="text-xs font-semibold">39 Butir Pertanyaan</h3>
+                                        <h3 className="text-xs font-semibold">
+                                            {totalQuestions ? `${totalQuestions} Butir Pertanyaan` : 'Butir Pertanyaan'}
+                                        </h3>
                                     </div>
                                     <p className="text-xs text-muted-foreground leading-relaxed">
                                         Selesai mendaftarkan penilai, Anda akan langsung mengisi kuesioner mandiri (± 15 menit).

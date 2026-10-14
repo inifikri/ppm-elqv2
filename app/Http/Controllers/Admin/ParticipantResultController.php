@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\EmailLogStatus;
 use App\Enums\EmailLogType;
 use App\Enums\PermissionName;
-use App\Enums\RaterRole;
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SendResultPdfRequest;
 use App\Jobs\SendAssessmentResultPdfJob;
@@ -25,76 +23,6 @@ use Inertia\Response;
 
 class ParticipantResultController extends Controller
 {
-    /**
-     * Daftar ringkasan hasil assessment per peserta.
-     */
-    public function index(Request $request): Response
-    {
-        Gate::authorize(PermissionName::ResultsView->value);
-
-        $search = $request->query('search');
-        $like = $search === null || trim($search) === ''
-            ? null
-            : '%'.addcslashes(trim($search), '\\%_').'%';
-
-        $participants = User::query()
-            ->role(UserRole::Participant->value)
-            ->with([
-                'participantProfile.company',
-                'raters' => fn ($q) => $q->select('id', 'participant_id', 'role', 'submitted_at'),
-            ])
-            ->when($like, fn ($query) => $query->where(fn ($q) => $q
-                ->where('name', 'like', $like)
-                ->orWhere('email', 'like', $like)
-                ->orWhereHas('participantProfile', fn ($p) => $p
-                    ->where('position', 'like', $like)
-                    ->orWhereHas('company', fn ($c) => $c->where('name', 'like', $like)))))
-            ->orderBy('name')
-            ->paginate(10)
-            ->withQueryString()
-            ->through(function (User $user) {
-                $raters = $user->raters;
-                $selfRater = $raters->firstWhere('role', RaterRole::SelfRater);
-                $bossRater = $raters->firstWhere('role', RaterRole::Boss);
-                $subRaters = $raters->where('role', RaterRole::Subordinate);
-
-                $selfSubmitted = $selfRater?->submitted_at !== null;
-                $bossSubmitted = $bossRater?->submitted_at !== null;
-                $subTotal = $subRaters->count();
-                $subSubmitted = $subRaters->whereNotNull('submitted_at')->count();
-
-                $totalRaters = $raters->count();
-                $totalSubmitted = $raters->whereNotNull('submitted_at')->count();
-
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'company' => $user->participantProfile?->company?->name,
-                    'position' => $user->participantProfile?->position,
-                    'raters_status' => [
-                        'self' => $selfSubmitted,
-                        'boss' => $bossSubmitted,
-                        'subordinate' => [
-                            'submitted' => $subSubmitted,
-                            'total' => $subTotal,
-                        ],
-                        'total_submitted' => $totalSubmitted,
-                        'total_raters' => $totalRaters,
-                    ],
-                    'is_completed' => $totalRaters > 0 && $totalSubmitted >= $totalRaters,
-                    'has_data' => $totalSubmitted > 0,
-                ];
-            });
-
-        return Inertia::render('admin/participants/result/index', [
-            'participants' => $participants,
-            'filters' => [
-                'search' => $search ?? '',
-            ],
-        ]);
-    }
-
     /**
      * Tampilan utama review hasil assessment peserta (FR-017 s.d. FR-022).
      */

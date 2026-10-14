@@ -3,19 +3,25 @@
 namespace App\Enums;
 
 /**
- * Daftar permission awal (usulan, mudah diubah di satu tempat ini).
+ * Daftar permission sistem ELQ 360°.
  */
 enum PermissionName: string
 {
     case UsersManage = 'users.manage';
+    case UsersResetPassword = 'users.reset-password';
+    case UsersRestore = 'users.restore';
     case RolesPermissionsManage = 'roles.permissions.manage';
     case DimensionsManage = 'dimensions.manage';
     case SubDimensionsManage = 'sub-dimensions.manage';
     case QuestionsManage = 'questions.manage';
     case ParticipantsView = 'participants.view';
+    case ParticipantsUpdate = 'participants.update';
+    case ParticipantsBulk = 'participants.bulk';
     case ResultsView = 'results.view';
     case ResultsShare = 'results.share';
     case ResultsExport = 'results.export';
+    case RatersResend = 'raters.resend';
+    case RatersRevoke = 'raters.revoke';
     case ActivityLogView = 'activity-log.view';
     case EmailLogManage = 'email-log.manage';
     case SettingsManage = 'settings.manage';
@@ -27,12 +33,34 @@ enum PermissionName: string
     public function group(): string
     {
         return match ($this) {
-            self::UsersManage, self::RolesPermissionsManage => 'Pengguna',
-            self::DimensionsManage, self::SubDimensionsManage, self::QuestionsManage => 'Kuesioner',
-            self::ParticipantsView, self::ResultsView, self::ResultsShare, self::ResultsExport => 'Hasil',
-            self::ActivityLogView, self::EmailLogManage, self::SettingsManage => 'Sistem',
-            self::RatersManageOwn, self::AssessmentFillSelf => 'Assessment',
-            self::CompanyManage, self::ParticipantManage => 'Company',
+            self::UsersManage,
+            self::UsersResetPassword,
+            self::UsersRestore,
+            self::RolesPermissionsManage => 'Pengguna',
+
+            self::DimensionsManage,
+            self::SubDimensionsManage,
+            self::QuestionsManage => 'Kuesioner',
+
+            self::ParticipantsView,
+            self::ParticipantsUpdate,
+            self::ParticipantsBulk,
+            self::ParticipantManage,
+            self::RatersResend,
+            self::RatersRevoke => 'Peserta',
+
+            self::ResultsView,
+            self::ResultsShare,
+            self::ResultsExport => 'Hasil',
+
+            self::ActivityLogView,
+            self::EmailLogManage,
+            self::SettingsManage => 'Sistem',
+
+            self::RatersManageOwn,
+            self::AssessmentFillSelf => 'Assessment',
+
+            self::CompanyManage => 'Company',
         };
     }
 
@@ -40,21 +68,27 @@ enum PermissionName: string
     {
         return match ($this) {
             self::UsersManage => 'Kelola pengguna',
+            self::UsersResetPassword => 'Reset password pengguna',
+            self::UsersRestore => 'Pulihkan data pengguna',
             self::RolesPermissionsManage => 'Kelola hak akses role',
             self::DimensionsManage => 'Kelola dimensi',
             self::SubDimensionsManage => 'Kelola sub-dimensi',
             self::QuestionsManage => 'Kelola pertanyaan',
-            self::ParticipantsView => 'Lihat peserta',
-            self::ResultsView => 'Lihat hasil',
-            self::ResultsShare => 'Bagikan hasil',
-            self::ResultsExport => 'Ekspor hasil',
+            self::ParticipantsView => 'Lihat daftar peserta',
+            self::ParticipantsUpdate => 'Ubah profil peserta',
+            self::ParticipantsBulk => 'Aksi massal peserta',
+            self::ParticipantManage => 'Kelola peserta',
+            self::RatersResend => 'Kirim ulang undangan penilai',
+            self::RatersRevoke => 'Cabut link penilai',
+            self::ResultsView => 'Lihat hasil asesmen',
+            self::ResultsShare => 'Bagikan hasil asesmen',
+            self::ResultsExport => 'Ekspor hasil asesmen',
             self::ActivityLogView => 'Lihat log aktivitas',
             self::EmailLogManage => 'Kelola log email',
             self::SettingsManage => 'Kelola pengaturan',
             self::RatersManageOwn => 'Kelola penilai sendiri',
             self::AssessmentFillSelf => 'Isi assessment sendiri',
             self::CompanyManage => 'Kelola company',
-            self::ParticipantManage => 'Kelola participant',
         };
     }
 

@@ -14,6 +14,10 @@ void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
+            case name === 'error':
+                return ({ children }: { children: React.ReactNode }) => (
+                    <>{children}</>
+                );
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('participant/'):

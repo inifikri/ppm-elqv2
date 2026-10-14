@@ -65,7 +65,12 @@ export default function ParticipantLayout({
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56" align="end">
-                                {auth.user && <UserMenuContent user={auth.user} />}
+                                {auth.user && (
+                                    <UserMenuContent
+                                        user={auth.user}
+                                        hideProfile
+                                    />
+                                )}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>

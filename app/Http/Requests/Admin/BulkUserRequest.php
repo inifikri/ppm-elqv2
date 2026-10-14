@@ -18,9 +18,9 @@ class BulkUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'action' => ['required', Rule::in(['activate', 'deactivate', 'delete'])],
+            'action' => ['required', Rule::in(['activate', 'deactivate', 'delete', 'restore', 'force_delete'])],
             'ids' => ['required', 'array', 'min:1', 'max:100'],
-            'ids.*' => ['integer', 'distinct', Rule::exists('users', 'id')->whereNull('deleted_at')],
+            'ids.*' => ['integer', 'distinct', Rule::exists('users', 'id')],
         ];
     }
 }

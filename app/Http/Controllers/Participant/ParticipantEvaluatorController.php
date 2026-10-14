@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Participant;
 use App\Actions\Participant\StoreEvaluators;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Participant\StoreEvaluatorsRequest;
+use App\Models\Question;
 use App\Services\Participant\ParticipantFlowResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,6 +27,7 @@ class ParticipantEvaluatorController extends Controller
 
         return Inertia::render('participant/evaluators/setup', [
             'participantEmail' => $request->user()->email,
+            'totalQuestions' => Question::count(),
         ]);
     }
 

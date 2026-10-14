@@ -1,16 +1,19 @@
-import { Form } from '@inertiajs/react';
+import { Form, Link } from '@inertiajs/react';
 import type { ComponentProps } from 'react';
 import { useState } from 'react';
+import { PasswordStrength } from '@/components/auth/password-strength';
 import { FormCard } from '@/components/form-card';
 import { FormField } from '@/components/form-field';
 import { FormFooter } from '@/components/form-footer';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { UnsavedChangesGuard } from '@/components/unsaved-changes-guard';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { fieldA11y as a11y } from '@/components/master-form';
+import { cn } from '@/lib/utils';
 import { index } from '@/routes/admin/users';
 import type { EditableUser, PermissionGroup } from '@/types';
 import PhotoInput from './photo-input';
@@ -35,6 +38,8 @@ export default function UserForm({
     const [createRole, setCreateRole] = useState<'admin' | 'participant'>(
         'participant',
     );
+    const [password, setPassword] = useState('');
+    const [passwordConfirmation, setPasswordConfirmation] = useState('');
     const role = isEdit ? (user.role ?? 'participant') : createRole;
     const isParticipant = role === 'participant';
 
@@ -92,6 +97,7 @@ export default function UserForm({
                             id="phone"
                             label="Telepon"
                             error={errors.phone}
+                            className="sm:col-span-2"
                         >
                             <Input
                                 {...a11y('phone', errors.phone)}
@@ -99,50 +105,30 @@ export default function UserForm({
                                 defaultValue={user?.phone ?? ''}
                             />
                         </FormField>
-                        {isParticipant && (
-                            <>
-                                <FormField
-                                    id="company_name"
-                                    label="Perusahaan"
-                                    error={errors.company_name}
-                                    required
-                                >
-                                    <Input
-                                        {...a11y(
-                                            'company_name',
-                                            errors.company_name,
-                                        )}
-                                        name="company_name"
-                                        list="companies"
-                                        required
-                                        defaultValue={user?.company_name ?? ''}
-                                    />
-                                    <datalist id="companies">
-                                        {companies.map((c) => (
-                                            <option key={c} value={c} />
-                                        ))}
-                                    </datalist>
-                                </FormField>
-                                <FormField
-                                    id="position"
-                                    label="Jabatan"
-                                    error={errors.position}
-                                    required
-                                >
-                                    <Input
-                                        {...a11y('position', errors.position)}
-                                        name="position"
-                                        required
-                                        defaultValue={user?.position ?? ''}
-                                    />
-                                </FormField>
-                            </>
+                        {isEdit && isParticipant && (
+                            <div className="sm:col-span-2 rounded-control border border-primary/20 bg-primary/5 p-4 text-xs space-y-2">
+                                <p className="font-semibold text-primary">Informasi Perusahaan & Jabatan Peserta</p>
+                                <p className="text-muted-foreground">
+                                    Perusahaan dan jabatan peserta dikelola di modul Peserta.
+                                    {user?.company_name && (
+                                        <span className="block mt-1 font-medium text-foreground">
+                                            Saat ini: {user.company_name} &bull; {user.position}
+                                        </span>
+                                    )}
+                                </p>
+                                <Button asChild variant="outline" size="sm" className="mt-1 text-xs">
+                                    <Link href={`/admin/participants/${user.id}`}>
+                                        Buka Detail Peserta &rarr;
+                                    </Link>
+                                </Button>
+                            </div>
                         )}
                         <FormField
                             id="password"
                             label="Password"
                             error={errors.password}
                             required={!isEdit}
+                            className="sm:col-span-2"
                             description={
                                 isEdit
                                     ? 'Kosongkan bila tidak diubah'
@@ -152,21 +138,55 @@ export default function UserForm({
                             <PasswordInput
                                 {...a11y('password', errors.password)}
                                 name="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 required={!isEdit}
                                 autoComplete="new-password"
+                                placeholder={
+                                    isEdit
+                                        ? 'Kosongkan bila tidak diubah'
+                                        : 'Minimal 8 karakter'
+                                }
                             />
+                            {(!isEdit || password.length > 0) && (
+                                <div className="mt-3">
+                                    <PasswordStrength value={password} />
+                                </div>
+                            )}
                         </FormField>
                         <FormField
                             id="password_confirmation"
                             label="Konfirmasi password"
+                            error={errors.password_confirmation}
                             required={!isEdit}
+                            className="sm:col-span-2"
                         >
                             <PasswordInput
                                 id="password_confirmation"
                                 name="password_confirmation"
+                                value={passwordConfirmation}
+                                onChange={(e) =>
+                                    setPasswordConfirmation(e.target.value)
+                                }
                                 required={!isEdit}
                                 autoComplete="new-password"
+                                placeholder="Ulangi password"
                             />
+                            {passwordConfirmation && (
+                                <p
+                                    role="status"
+                                    className={cn(
+                                        'mt-1.5 text-xs font-medium',
+                                        password === passwordConfirmation
+                                            ? 'text-success'
+                                            : 'text-destructive',
+                                    )}
+                                >
+                                    {password === passwordConfirmation
+                                        ? 'Password cocok.'
+                                        : 'Password belum cocok.'}
+                                </p>
+                            )}
                         </FormField>
                     </FormCard>
 
@@ -248,7 +268,15 @@ export default function UserForm({
                     <FormFooter
                         processing={processing}
                         cancelHref={index()}
-                        onReset={isEdit ? () => reset() : undefined}
+                        onReset={
+                            isEdit
+                                ? () => {
+                                      reset();
+                                      setPassword('');
+                                      setPasswordConfirmation('');
+                                  }
+                                : undefined
+                        }
                         canReset={isDirty}
                     />
                 </>

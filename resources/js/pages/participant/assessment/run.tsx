@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { AssessmentProgress, type AutosaveStatus } from '@/components/assessment/assessment-progress';
 import { QuestionCard } from '@/components/assessment/question-card';
+import { QuestionNavigator } from '@/components/assessment/question-navigator';
 import { QuestionsLoader } from '@/components/assessment/questions-loader';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,7 +14,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ArrowLeft, ArrowRight, CheckCircle2, Send } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, LayoutGrid, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AssessmentQuestionItem } from '@/types/assessment';
 
@@ -52,6 +53,7 @@ export default function AssessmentRun({
 
     const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>('idle');
     const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
+    const [navigatorOpen, setNavigatorOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const lastFailedSave = useRef<{ questionId: number; value: number } | null>(null);
 
@@ -59,6 +61,7 @@ export default function AssessmentRun({
     const totalQuestions = questions.length;
     const answeredCount = questions.filter((q) => answers[q.id] !== undefined).length;
     const isAllAnswered = answeredCount === totalQuestions && totalQuestions > 0;
+    const isCurrentAnswered = currentQuestion !== undefined && answers[currentQuestion.id] !== undefined;
 
     // Send answer to server via fetch
     const persistAnswer = useCallback(async (questionId: number, value: number) => {
@@ -119,6 +122,7 @@ export default function AssessmentRun({
             // Ignore if active element is an input, textarea, or dialog open
             if (
                 confirmSubmitOpen ||
+                navigatorOpen ||
                 ['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)
             ) {
                 return;
@@ -132,17 +136,19 @@ export default function AssessmentRun({
                 setCurrentIndex((prev) => Math.max(0, prev - 1));
             } else if (e.key === 'ArrowRight') {
                 e.preventDefault();
-                setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1));
+                if (isCurrentAnswered) {
+                    setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1));
+                }
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [currentIndex, totalQuestions, confirmSubmitOpen, currentQuestion]);
+    }, [currentIndex, totalQuestions, confirmSubmitOpen, navigatorOpen, currentQuestion, isCurrentAnswered]);
 
     const handleFinalSubmit = () => {
         if (!isAllAnswered) {
-            toast.error('Harap selesaikan seluruh 39 pertanyaan sebelum mengirim.');
+            toast.error(`Harap selesaikan seluruh ${totalQuestions} pertanyaan sebelum mengirim.`);
             return;
         }
 
@@ -185,6 +191,7 @@ export default function AssessmentRun({
                     answeredCount={answeredCount}
                     autosaveStatus={autosaveStatus}
                     onRetryAutosave={handleRetryAutosave}
+                    onOpenNavigator={() => setNavigatorOpen(true)}
                 />
 
                 {/* Main Question Card */}
@@ -198,9 +205,9 @@ export default function AssessmentRun({
                     />
                 </div>
 
-                {/* Bottom Navigation Bar (tanpa garis pembatas, tombol konsisten admin) */}
+                {/* Bottom Navigation Bar (tanpa garis pembatas, tombol konsisten admin, mobile friendly) */}
                 <div className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-md p-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0.75rem))] sm:static sm:bg-transparent sm:p-0">
-                    <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
+                    <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 sm:gap-3">
                         <Button
                             type="button"
                             variant="outline"
@@ -213,13 +220,26 @@ export default function AssessmentRun({
                             <span>Sebelumnya</span>
                         </Button>
 
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="lg"
+                            onClick={() => setNavigatorOpen(true)}
+                            className="gap-1.5"
+                            title={`Buka daftar ${totalQuestions} pertanyaan`}
+                        >
+                            <LayoutGrid className="size-4 text-primary" />
+                            <span className="hidden sm:inline">Daftar Soal</span>
+                            <span className="sm:hidden text-xs">{answeredCount}/{totalQuestions}</span>
+                        </Button>
+
                         <div className="flex items-center gap-2">
                             {currentIndex < totalQuestions - 1 ? (
                                 <Button
                                     type="button"
                                     size="lg"
                                     onClick={() => setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1))}
-                                    disabled={isSubmitting}
+                                    disabled={!isCurrentAnswered || isSubmitting}
                                     className="gap-1.5"
                                 >
                                     <span>Selanjutnya</span>
@@ -231,7 +251,7 @@ export default function AssessmentRun({
                                     size="lg"
                                     onClick={() => setConfirmSubmitOpen(true)}
                                     disabled={!isAllAnswered || isSubmitting}
-                                    className="gap-1.5"
+                                    className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
                                 >
                                     <CheckCircle2 className="size-4" />
                                     <span>Selesai &amp; Kirim</span>
@@ -252,7 +272,7 @@ export default function AssessmentRun({
                             <AlertDialogDescription asChild>
                                 <div className="space-y-3 pt-1 text-sm text-muted-foreground text-left leading-relaxed">
                                     <p>
-                                        Seluruh <strong>39 pertanyaan</strong> telah Anda jawab dengan lengkap.
+                                        Seluruh <strong>{totalQuestions} pertanyaan</strong> telah Anda jawab dengan lengkap.
                                     </p>
                                     <p className="rounded-lg bg-muted/60 p-3.5 text-xs leading-relaxed text-foreground/80">
                                         Setelah diserahkan, jawaban Anda akan disimpan secara permanen dan tidak dapat diubah kembali.
@@ -279,6 +299,18 @@ export default function AssessmentRun({
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
+
+                {/* Mobile-Friendly Question List Navigator */}
+                <QuestionNavigator
+                    open={navigatorOpen}
+                    onOpenChange={setNavigatorOpen}
+                    questions={questions}
+                    answers={answers}
+                    currentIndex={currentIndex}
+                    onSelectQuestion={setCurrentIndex}
+                    onSubmitClick={() => setConfirmSubmitOpen(true)}
+                    submitLabel="Kirim Self-Assessment Sekarang"
+                />
             </div>
         </>
     );

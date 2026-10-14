@@ -30,11 +30,13 @@ class CreateUser
             $user->assignRole($role->value);
 
             if ($role === UserRole::Participant) {
-                ParticipantProfile::create([
-                    'user_id' => $user->id,
-                    'company_id' => Company::findOrCreateByName($data['company_name'])->id,
-                    'position' => trim($data['position']),
-                ]);
+                if (! empty($data['company_name']) && ! empty($data['position'])) {
+                    ParticipantProfile::create([
+                        'user_id' => $user->id,
+                        'company_id' => Company::findOrCreateByName($data['company_name'])->id,
+                        'position' => trim($data['position']),
+                    ]);
+                }
 
                 $names = $data['permissions'] ?? [];
                 $user->syncPermissions($names);

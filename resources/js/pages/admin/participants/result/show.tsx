@@ -1,21 +1,41 @@
-import { useState } from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, Download, Mail, AlertCircle, FileBarChart2 } from 'lucide-react';
-import { PageContainer } from '@/components/page-container';
-import { PageHeader } from '@/components/page-header';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { EmptyState } from '@/components/empty-state';
-import { ScoreCard } from '@/components/assessment/score-card';
-import { DimensionRadarChart } from '@/components/assessment/charts/dimension-radar-chart';
-import { RoleComparisonBarChart } from '@/components/assessment/charts/role-comparison-bar-chart';
-import { SubDimensionBarChart } from '@/components/assessment/charts/sub-dimension-bar-chart';
-import { DetailedAnswersTable } from '@/components/assessment/detailed-answers-table';
-import { SendPdfDialog } from '@/components/assessment/send-pdf-dialog';
-import type { AssessmentResult } from '@/types/assessment';
-import type { Auth } from '@/types/auth';
+import { useState } from "react";
+import { Head, Link, usePage } from "@inertiajs/react";
+import {
+    ArrowLeft,
+    Download,
+    Mail,
+    AlertCircle,
+    FileBarChart2,
+    Send,
+} from "lucide-react";
+import { PageContainer } from "@/components/page-container";
+import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { EmptyState } from "@/components/empty-state";
+import { ScoreCard } from "@/components/assessment/score-card";
+import { DimensionRadarChart } from "@/components/assessment/charts/dimension-radar-chart";
+import { RoleComparisonBarChart } from "@/components/assessment/charts/role-comparison-bar-chart";
+import { SubDimensionBarChart } from "@/components/assessment/charts/sub-dimension-bar-chart";
+import { DetailedAnswersTable } from "@/components/assessment/detailed-answers-table";
+import { SendPdfDialog } from "@/components/assessment/send-pdf-dialog";
+import type { AssessmentResult } from "@/types/assessment";
+import type { Auth } from "@/types/auth";
 
 export default function AssessmentResultShow({
     result,
@@ -34,7 +54,7 @@ export default function AssessmentResultShow({
         result.participant.email,
     ]
         .filter(Boolean)
-        .join(' · ');
+        .join(" · ");
 
     const downloadPdfUrl = `/admin/participants/${result.participant.id}/result/pdf`;
     const sendPdfUrl = `/admin/participants/${result.participant.id}/result/send-pdf`;
@@ -45,17 +65,26 @@ export default function AssessmentResultShow({
 
             <div className="mb-2">
                 <Button asChild variant="ghost" size="sm" icon={ArrowLeft}>
-                    <Link href="/admin/results">Kembali ke Daftar Hasil Asesmen</Link>
+                    <Link href={`/admin/participants/${result.participant.id}`}>
+                        Kembali ke Detail Peserta
+                    </Link>
                 </Button>
             </div>
 
             <PageHeader
                 title={`Hasil Assessment: ${result.participant.name}`}
-                description={subtitle || 'Ringkasan hasil evaluasi kepemimpinan 360°'}
+                description={
+                    subtitle || "Ringkasan hasil evaluasi kepemimpinan 360°"
+                }
                 actions={
                     <div className="flex items-center gap-2">
                         {canExport && result.has_data && (
-                            <Button asChild variant="outline" size="sm" icon={Download}>
+                            <Button
+                                asChild
+                                variant="outline"
+                                size="sm"
+                                icon={Download}
+                            >
                                 <a href={downloadPdfUrl} download>
                                     Unduh PDF
                                 </a>
@@ -64,10 +93,10 @@ export default function AssessmentResultShow({
                         {canShare && result.has_data && (
                             <Button
                                 size="sm"
-                                icon={Mail}
+                                icon={Send}
                                 onClick={() => setSendModalOpen(true)}
                             >
-                                Kirim ke Email
+                                Kirim Hasil
                             </Button>
                         )}
                     </div>
@@ -92,13 +121,22 @@ export default function AssessmentResultShow({
                     {/* Tabs Konten */}
                     <Tabs defaultValue="overview" className="w-full">
                         <TabsList className="grid w-full grid-cols-3 max-w-md">
-                            <TabsTrigger value="overview">Ringkasan</TabsTrigger>
-                            <TabsTrigger value="sub-dimensions">Sub Dimensi</TabsTrigger>
-                            <TabsTrigger value="details">Detail Jawaban</TabsTrigger>
+                            <TabsTrigger value="overview">
+                                Ringkasan
+                            </TabsTrigger>
+                            <TabsTrigger value="sub-dimensions">
+                                Sub Dimensi
+                            </TabsTrigger>
+                            <TabsTrigger value="details">
+                                Detail Jawaban
+                            </TabsTrigger>
                         </TabsList>
 
                         {/* Tab 1: Ringkasan & Grafik Utama */}
-                        <TabsContent value="overview" className="space-y-6 pt-2">
+                        <TabsContent
+                            value="overview"
+                            className="space-y-6 pt-2"
+                        >
                             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                                 <Card>
                                     <CardHeader>
@@ -106,11 +144,15 @@ export default function AssessmentResultShow({
                                             Diagram Radar 3 Dimensi
                                         </CardTitle>
                                         <CardDescription className="text-xs">
-                                            Perbandingan persepsi kepemimpinan antara Diri Sendiri, Atasan, dan Bawahan.
+                                            Perbandingan persepsi kepemimpinan
+                                            antara Diri Sendiri, Atasan, dan
+                                            Bawahan.
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <DimensionRadarChart dimensions={result.dimensions} />
+                                        <DimensionRadarChart
+                                            dimensions={result.dimensions}
+                                        />
                                     </CardContent>
                                 </Card>
 
@@ -120,11 +162,14 @@ export default function AssessmentResultShow({
                                             Perbandingan Skor per Dimensi
                                         </CardTitle>
                                         <CardDescription className="text-xs">
-                                            Skor rata-rata tiap dimensi kepemimpinan (skala 1 s.d. 6).
+                                            Skor rata-rata tiap dimensi
+                                            kepemimpinan (skala 1 s.d. 6).
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <RoleComparisonBarChart dimensions={result.dimensions} />
+                                        <RoleComparisonBarChart
+                                            dimensions={result.dimensions}
+                                        />
                                     </CardContent>
                                 </Card>
                             </div>
@@ -136,7 +181,8 @@ export default function AssessmentResultShow({
                                         Tabel Rangkuman Nilai Dimensi
                                     </CardTitle>
                                     <CardDescription className="text-xs">
-                                        Rata-rata penilaian untuk setiap dimensi kepemimpinan utama.
+                                        Rata-rata penilaian untuk setiap dimensi
+                                        kepemimpinan utama.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -144,33 +190,69 @@ export default function AssessmentResultShow({
                                         <Table>
                                             <TableHeader className="bg-muted/50">
                                                 <TableRow>
-                                                    <TableHead className="font-semibold">Dimensi</TableHead>
-                                                    <TableHead className="text-center">Self</TableHead>
-                                                    <TableHead className="text-center">Boss</TableHead>
-                                                    <TableHead className="text-center">Bawahan</TableHead>
-                                                    <TableHead className="text-center">Rata-rata</TableHead>
+                                                    <TableHead className="font-semibold">
+                                                        Dimensi
+                                                    </TableHead>
+                                                    <TableHead className="text-center">
+                                                        Self
+                                                    </TableHead>
+                                                    <TableHead className="text-center">
+                                                        Boss
+                                                    </TableHead>
+                                                    <TableHead className="text-center">
+                                                        Bawahan
+                                                    </TableHead>
+                                                    <TableHead className="text-center">
+                                                        Rata-rata
+                                                    </TableHead>
                                                 </TableRow>
                                             </TableHeader>
-                                            <TableBody>
-                                                {result.dimensions.map((dim) => (
-                                                    <TableRow key={dim.id}>
-                                                        <TableCell className="font-semibold">
-                                                            {dim.name}
-                                                        </TableCell>
-                                                        <TableCell className="text-center font-medium tabular-nums text-indigo-600 dark:text-indigo-400">
-                                                            {dim.scores.self !== null ? dim.scores.self.toFixed(2) : '-'}
-                                                        </TableCell>
-                                                        <TableCell className="text-center font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
-                                                            {dim.scores.boss !== null ? dim.scores.boss.toFixed(2) : '-'}
-                                                        </TableCell>
-                                                        <TableCell className="text-center font-medium tabular-nums text-amber-600 dark:text-amber-400">
-                                                            {dim.scores.subordinate !== null ? dim.scores.subordinate.toFixed(2) : '-'}
-                                                        </TableCell>
-                                                        <TableCell className="text-center font-bold tabular-nums">
-                                                            {dim.scores.average !== null ? dim.scores.average.toFixed(2) : '-'}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
+                                            <TableBody className="bg-white dark:bg-card">
+                                                {result.dimensions.map(
+                                                    (dim) => (
+                                                        <TableRow key={dim.id}>
+                                                            <TableCell className="font-semibold">
+                                                                {dim.name}
+                                                            </TableCell>
+                                                            <TableCell className="text-center font-medium tabular-nums text-indigo-600 dark:text-indigo-400">
+                                                                {dim.scores
+                                                                    .self !==
+                                                                null
+                                                                    ? dim.scores.self.toFixed(
+                                                                          2,
+                                                                      )
+                                                                    : "-"}
+                                                            </TableCell>
+                                                            <TableCell className="text-center font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
+                                                                {dim.scores
+                                                                    .boss !==
+                                                                null
+                                                                    ? dim.scores.boss.toFixed(
+                                                                          2,
+                                                                      )
+                                                                    : "-"}
+                                                            </TableCell>
+                                                            <TableCell className="text-center font-medium tabular-nums text-amber-600 dark:text-amber-400">
+                                                                {dim.scores
+                                                                    .subordinate !==
+                                                                null
+                                                                    ? dim.scores.subordinate.toFixed(
+                                                                          2,
+                                                                      )
+                                                                    : "-"}
+                                                            </TableCell>
+                                                            <TableCell className="text-center font-bold tabular-nums">
+                                                                {dim.scores
+                                                                    .average !==
+                                                                null
+                                                                    ? dim.scores.average.toFixed(
+                                                                          2,
+                                                                      )
+                                                                    : "-"}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ),
+                                                )}
                                             </TableBody>
                                         </Table>
                                     </div>
@@ -179,7 +261,10 @@ export default function AssessmentResultShow({
                         </TabsContent>
 
                         {/* Tab 2: Rincian Sub Dimensi */}
-                        <TabsContent value="sub-dimensions" className="space-y-6 pt-2">
+                        <TabsContent
+                            value="sub-dimensions"
+                            className="space-y-6 pt-2"
+                        >
                             {result.dimensions.map((dim) => (
                                 <Card key={dim.id}>
                                     <CardHeader>
@@ -187,7 +272,8 @@ export default function AssessmentResultShow({
                                             Dimensi: {dim.name}
                                         </CardTitle>
                                         <CardDescription className="text-xs">
-                                            Perbandingan skor untuk seluruh sub-dimensi pada {dim.name}.
+                                            Perbandingan skor untuk seluruh
+                                            sub-dimensi pada {dim.name}.
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-6">
@@ -209,7 +295,8 @@ export default function AssessmentResultShow({
                                         Rincian Jawaban per Butir Pertanyaan
                                     </CardTitle>
                                     <CardDescription className="text-xs">
-                                        Nilai jawaban per rater untuk masing-masing pertanyaan kuesioner 360°.
+                                        Nilai jawaban per rater untuk
+                                        masing-masing pertanyaan kuesioner 360°.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -241,7 +328,7 @@ export default function AssessmentResultShow({
 
 AssessmentResultShow.layout = {
     breadcrumbs: [
-        { title: 'Hasil Asesmen', href: '/admin/results' },
-        { title: 'Detail Hasil' },
+        { title: "Peserta", href: "/admin/participants" },
+        { title: "Detail Hasil" },
     ],
 };

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Participant;
 
-use App\Enums\RaterRole;
 use App\Http\Controllers\Controller;
 use App\Models\EmailLog;
+use App\Models\Question;
 use App\Services\Participant\ParticipantFlowResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -81,6 +81,7 @@ class ParticipantHomeController extends Controller
             'self_assessment' => [
                 'is_submitted' => true,
                 'submitted_at' => $flow['self_rater']?->submitted_at?->toIso8601String(),
+                'total_questions' => Question::count(),
             ],
             'evaluators' => [
                 'boss' => $bossStatus,

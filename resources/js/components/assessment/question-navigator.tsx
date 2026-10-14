@@ -18,6 +18,7 @@ export type QuestionNavigatorProps = {
     currentIndex: number;
     onSelectQuestion: (index: number) => void;
     onSubmitClick: () => void;
+    submitLabel?: string;
 };
 
 export function QuestionNavigator({
@@ -28,6 +29,7 @@ export function QuestionNavigator({
     currentIndex,
     onSelectQuestion,
     onSubmitClick,
+    submitLabel = 'Kirim Penilaian Sekarang',
 }: QuestionNavigatorProps) {
     const total = questions.length;
     const answeredCount = questions.filter((q) => answers[q.id] !== undefined).length;
@@ -49,7 +51,7 @@ export function QuestionNavigator({
                     <SheetHeader className="text-left pb-2 space-y-1">
                         <div className="flex items-center justify-between">
                             <SheetTitle className="text-base sm:text-lg font-bold">
-                                Daftar 39 Pertanyaan
+                                Daftar {total} Pertanyaan
                             </SheetTitle>
                             <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
                                 {answeredCount} / {total} Terjawab
@@ -140,7 +142,7 @@ export function QuestionNavigator({
                         >
                             <Send className="size-4" />
                             {isAllAnswered
-                                ? 'Kirim Self-Assessment Sekarang'
+                                ? submitLabel
                                 : `Lengkapi Semua Soal (${total - answeredCount} tersisa)`}
                         </Button>
                     </div>

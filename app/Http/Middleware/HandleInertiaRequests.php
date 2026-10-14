@@ -4,9 +4,11 @@ namespace App\Http\Middleware;
 
 use App\Actions\Dashboard\BuildDashboard;
 use App\Enums\PermissionName;
+use App\Enums\UserRole;
 use App\Models\Dimension;
 use App\Models\Question;
 use App\Models\SubDimension;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Middleware;
@@ -52,6 +54,11 @@ class HandleInertiaRequests extends Middleware
                     'manage_sub_dimensions' => (bool) $request->user()?->can(PermissionName::SubDimensionsManage->value),
                     'manage_questions' => (bool) $request->user()?->can(PermissionName::QuestionsManage->value),
                     'manage_company' => (bool) $request->user()?->can(PermissionName::CompanyManage->value),
+                    'view_participants' => (bool) $request->user()?->can(PermissionName::ParticipantsView->value),
+                    'update_participants' => (bool) $request->user()?->can(PermissionName::ParticipantsUpdate->value),
+                    'bulk_participants' => (bool) $request->user()?->can(PermissionName::ParticipantsBulk->value),
+                    'resend_raters' => (bool) $request->user()?->can(PermissionName::RatersResend->value),
+                    'revoke_raters' => (bool) $request->user()?->can(PermissionName::RatersRevoke->value),
                     'view_results' => (bool) $request->user()?->can(PermissionName::ResultsView->value),
                     'export_results' => (bool) $request->user()?->can(PermissionName::ResultsExport->value),
                     'share_results' => (bool) $request->user()?->can(PermissionName::ResultsShare->value),
@@ -68,7 +75,7 @@ class HandleInertiaRequests extends Middleware
     /**
      * Sidebar badge counts; soft-deleted rows are excluded by the models' global scope.
      *
-     * @return array{dimensions: int|null, sub_dimensions: int|null, questions: int|null}|null
+     * @return array{dimensions: int|null, sub_dimensions: int|null, questions: int|null, participants: int|null}|null
      */
     private function menuCounts(Request $request): ?array
     {
@@ -82,6 +89,7 @@ class HandleInertiaRequests extends Middleware
             'dimensions' => $user->can(PermissionName::DimensionsManage->value) ? Dimension::count() : null,
             'sub_dimensions' => $user->can(PermissionName::SubDimensionsManage->value) ? SubDimension::count() : null,
             'questions' => $user->can(PermissionName::QuestionsManage->value) ? Question::count() : null,
+            'participants' => $user->can(PermissionName::ParticipantsView->value) ? User::role(UserRole::Participant->value)->count() : null,
         ];
     }
 }

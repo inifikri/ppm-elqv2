@@ -38,10 +38,12 @@ class UpdateUser
             $user->save();
 
             if ($user->hasRole(UserRole::Participant->value)) {
-                $user->participantProfile()->updateOrCreate([], [
-                    'company_id' => Company::findOrCreateByName($data['company_name'])->id,
-                    'position' => trim($data['position']),
-                ]);
+                if (! empty($data['company_name']) && ! empty($data['position'])) {
+                    $user->participantProfile()->updateOrCreate([], [
+                        'company_id' => Company::findOrCreateByName($data['company_name'])->id,
+                        'position' => trim($data['position']),
+                    ]);
+                }
 
                 $before = $user->getDirectPermissions()->pluck('name')->sort()->values()->all();
                 $names = $data['permissions'] ?? [];

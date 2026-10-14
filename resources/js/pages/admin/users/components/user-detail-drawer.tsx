@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { FileBarChart2, Pencil, X } from 'lucide-react';
+import { History, Info, Pencil, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Drawer } from '@/components/drawer';
@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInitials } from '@/hooks/use-initials';
 import { detail, edit } from '@/routes/admin/users';
 import type { UserDetail } from '@/types';
@@ -18,7 +19,7 @@ const dateTime = new Intl.DateTimeFormat('id-ID', {
     timeStyle: 'short',
 });
 
-const formatDate = (iso: string | null) =>
+const formatDate = (iso: string | null | undefined) =>
     iso ? dateTime.format(new Date(iso)) : '-';
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -101,13 +102,6 @@ export function UserDetailDrawer({
                     <Button variant="outline" icon={X} onClick={onClose}>
                         Tutup
                     </Button>
-                    {userId !== null && user?.role === 'participant' && (
-                        <Button asChild variant="outline" icon={FileBarChart2}>
-                            <Link href={`/admin/participants/${userId}/result`}>
-                                Lihat Hasil
-                            </Link>
-                        </Button>
-                    )}
                     {userId !== null && (
                         <Button asChild icon={Pencil}>
                             <Link href={edit(userId)}>Edit</Link>
@@ -167,32 +161,71 @@ export function UserDetailDrawer({
                             </div>
                         </div>
                     </div>
-                    <Section title="Informasi akun">
-                        <Row
-                            label="Email"
-                            value={
-                                user.email_verified_at
-                                    ? 'Terverifikasi'
-                                    : 'Belum terverifikasi'
-                            }
-                        />
-                        <Row
-                            label="Login terakhir"
-                            value={formatDate(user.last_login_at)}
-                        />
-                        <Row
-                            label="Dibuat pada"
-                            value={formatDate(user.created_at)}
-                        />
-                    </Section>
-                    <Section title="Profil">
-                        <Row label="Perusahaan" value={user.company} />
-                        <Row label="Jabatan" value={user.position} />
-                        <Row label="Telepon" value={user.phone} />
-                    </Section>
-                    <Section title="Hak akses">
-                        <Row label="Role" value={roleLabel(user.role)} />
-                    </Section>
+
+                    <Tabs defaultValue="info" className="w-full">
+                        <TabsList className="w-full grid grid-cols-2">
+                            <TabsTrigger value="info" className="gap-2">
+                                <Info className="size-4" /> Informasi
+                            </TabsTrigger>
+                            <TabsTrigger value="activity" className="gap-2">
+                                <History className="size-4" /> Aktivitas
+                            </TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="info" className="space-y-6 pt-3">
+                            <Section title="Informasi akun">
+                                <Row
+                                    label="Email"
+                                    value={
+                                        user.email_verified_at
+                                            ? 'Terverifikasi'
+                                            : 'Belum terverifikasi'
+                                    }
+                                />
+                                <Row
+                                    label="Login terakhir"
+                                    value={formatDate(user.last_login_at)}
+                                />
+                                <Row
+                                    label="Dibuat pada"
+                                    value={formatDate(user.created_at)}
+                                />
+                            </Section>
+                            <Section title="Profil">
+                                <Row label="Perusahaan" value={user.company} />
+                                <Row label="Jabatan" value={user.position} />
+                                <Row label="Telepon" value={user.phone} />
+                            </Section>
+                            <Section title="Hak akses">
+                                <Row label="Role" value={roleLabel(user.role)} />
+                            </Section>
+                        </TabsContent>
+
+                        <TabsContent value="activity" className="pt-3">
+                            {(!user.activities || user.activities.length === 0) ? (
+                                <p className="text-sm text-muted-foreground py-6 text-center">
+                                    Belum ada log aktivitas untuk pengguna ini.
+                                </p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {user.activities.map((act) => (
+                                        <div
+                                            key={act.id}
+                                            className="rounded-card border p-3 text-sm space-y-1 bg-card/50"
+                                        >
+                                            <p className="font-medium text-foreground">
+                                                {act.description}
+                                            </p>
+                                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                                <span>Oleh: {act.causer_name}</span>
+                                                <span>{formatDate(act.created_at)}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </TabsContent>
+                    </Tabs>
                 </div>
             )}
         </Drawer>

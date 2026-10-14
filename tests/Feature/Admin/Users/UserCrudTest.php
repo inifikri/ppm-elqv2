@@ -86,15 +86,13 @@ it('store peserta: lowercase, hash, verified, firstOrCreate company, log permiss
         ->and(Activity::where('log_name', 'users')->where('description', 'permissions')->exists())->toBeTrue();
 });
 
-it('store admin: tanpa permission langsung; peserta wajib perusahaan/jabatan; tolak permission luar Assessment; email duplikat', function () {
+it('store admin: tanpa permission langsung; tolak permission luar Assessment; email duplikat', function () {
     $admin = User::factory()->admin()->create();
 
     $this->actingAs($admin)->post('/admin/users', payload(['role' => 'admin', 'email' => 'adm2@x.test', 'permissions' => ['users.manage']]))
         ->assertRedirect('/admin/users');
     expect(User::where('email', 'adm2@x.test')->first()->getDirectPermissions())->toHaveCount(0);
 
-    $this->actingAs($admin)->post('/admin/users', payload(['company_name' => null, 'position' => null]))
-        ->assertSessionHasErrors(['company_name', 'position']);
     $this->actingAs($admin)->post('/admin/users', payload(['permissions' => ['users.manage']]))
         ->assertSessionHasErrors('permissions.0');
     $this->actingAs($admin)->post('/admin/users', payload(['email' => 'ADM2@x.test', 'role' => 'admin']))

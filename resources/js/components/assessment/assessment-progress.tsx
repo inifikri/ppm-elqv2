@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { CheckCircle2, Loader2, AlertCircle, RefreshCw, LayoutGrid } from 'lucide-react';
 
 export type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -9,6 +9,7 @@ export type AssessmentProgressProps = {
     answeredCount: number;
     autosaveStatus: AutosaveStatus;
     onRetryAutosave?: () => void;
+    onOpenNavigator?: () => void;
 };
 
 export function AssessmentProgress({
@@ -17,6 +18,7 @@ export function AssessmentProgress({
     answeredCount,
     autosaveStatus,
     onRetryAutosave,
+    onOpenNavigator,
 }: AssessmentProgressProps) {
     const progressPercent = Math.round((answeredCount / totalQuestions) * 100);
 
@@ -59,10 +61,23 @@ export function AssessmentProgress({
                     </div>
                 </div>
 
-                {/* Right: Counter text */}
-                <span className="text-xs font-medium text-muted-foreground">
-                    {answeredCount} dari {totalQuestions} terjawab
-                </span>
+                {/* Right: Counter text or Interactive Navigator Button */}
+                {onOpenNavigator ? (
+                    <button
+                        type="button"
+                        onClick={onOpenNavigator}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-background/80 px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                        title="Lihat daftar pertanyaan"
+                    >
+                        <LayoutGrid className="size-3 text-primary" />
+                        <span>Daftar Soal</span>
+                        <span className="text-muted-foreground">({answeredCount}/{totalQuestions})</span>
+                    </button>
+                ) : (
+                    <span className="text-xs font-medium text-muted-foreground">
+                        {answeredCount} dari {totalQuestions} terjawab
+                    </span>
+                )}
             </div>
 
             {/* Micro progress bar */}

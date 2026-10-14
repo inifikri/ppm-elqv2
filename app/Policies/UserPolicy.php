@@ -31,4 +31,26 @@ class UserPolicy
     {
         return $this->viewAny($user) && ! $user->is($target);
     }
+
+    public function restore(User $user, User $target): bool
+    {
+        return $user->can(PermissionName::UsersManage->value)
+            || $user->can(PermissionName::UsersRestore->value);
+    }
+
+    public function forceDelete(User $user, User $target): bool
+    {
+        return $this->delete($user, $target);
+    }
+
+    public function resetPassword(User $user, User $target): bool
+    {
+        return $user->can(PermissionName::UsersManage->value)
+            || $user->can(PermissionName::UsersResetPassword->value);
+    }
+
+    public function toggleStatus(User $user, User $target): bool
+    {
+        return $this->viewAny($user) && ! $user->is($target);
+    }
 }

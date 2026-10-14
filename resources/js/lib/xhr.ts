@@ -1,7 +1,11 @@
 /** fetch JSON dengan CSRF (cookie XSRF-TOKEN), sama seperti halaman login. */
 export async function xhr<T = Record<string, unknown>>(
     url: string,
-    init: { method?: 'GET' | 'POST'; body?: object; signal?: AbortSignal } = {},
+    init: {
+        method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+        body?: object;
+        signal?: AbortSignal;
+    } = {},
 ): Promise<[number, T]> {
     const token = decodeURIComponent(
         document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1] ?? '',
