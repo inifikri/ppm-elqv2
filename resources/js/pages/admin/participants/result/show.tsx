@@ -23,6 +23,7 @@ import {
     Table,
     TableBody,
     TableCell,
+    TableFooter,
     TableHead,
     TableHeader,
     TableRow,
@@ -145,8 +146,8 @@ export default function AssessmentResultShow({
                                         </CardTitle>
                                         <CardDescription className="text-xs">
                                             Perbandingan persepsi kepemimpinan
-                                            antara Diri Sendiri, Atasan, dan
-                                            Bawahan.
+                                            antara Diri Sendiri, Atasan,
+                                            Bawahan, dan Rata-rata (Average).
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
@@ -162,8 +163,9 @@ export default function AssessmentResultShow({
                                             Perbandingan Skor per Dimensi
                                         </CardTitle>
                                         <CardDescription className="text-xs">
-                                            Skor rata-rata tiap dimensi
-                                            kepemimpinan (skala 1 s.d. 6).
+                                            Skor tiap role dan rata-rata
+                                            (Average) per dimensi kepemimpinan
+                                            (skala 1 s.d. 6).
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
@@ -182,7 +184,8 @@ export default function AssessmentResultShow({
                                     </CardTitle>
                                     <CardDescription className="text-xs">
                                         Rata-rata penilaian untuk setiap dimensi
-                                        kepemimpinan utama.
+                                        kepemimpinan utama beserta rata-rata
+                                        keseluruhan (Average).
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -194,10 +197,10 @@ export default function AssessmentResultShow({
                                                         Dimensi
                                                     </TableHead>
                                                     <TableHead className="text-center">
-                                                        Self
+                                                        Diri Sendiri
                                                     </TableHead>
                                                     <TableHead className="text-center">
-                                                        Boss
+                                                        Atasan
                                                     </TableHead>
                                                     <TableHead className="text-center">
                                                         Bawahan
@@ -241,7 +244,7 @@ export default function AssessmentResultShow({
                                                                       )
                                                                     : "-"}
                                                             </TableCell>
-                                                            <TableCell className="text-center font-bold tabular-nums">
+                                                            <TableCell className="text-center font-bold tabular-nums text-sky-600 dark:text-sky-400">
                                                                 {dim.scores
                                                                     .average !==
                                                                 null
@@ -254,6 +257,50 @@ export default function AssessmentResultShow({
                                                     ),
                                                 )}
                                             </TableBody>
+                                            <TableFooter>
+                                                <TableRow className="bg-muted/60 font-bold">
+                                                    <TableCell className="font-bold text-foreground">
+                                                        Rata-rata Keseluruhan
+                                                        (Average)
+                                                    </TableCell>
+                                                    <TableCell className="text-center font-bold tabular-nums text-indigo-600 dark:text-indigo-400">
+                                                        {result
+                                                            .role_overall_scores
+                                                            .self !== null
+                                                            ? result.role_overall_scores.self.toFixed(
+                                                                  2,
+                                                              )
+                                                            : "-"}
+                                                    </TableCell>
+                                                    <TableCell className="text-center font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                                                        {result
+                                                            .role_overall_scores
+                                                            .boss !== null
+                                                            ? result.role_overall_scores.boss.toFixed(
+                                                                  2,
+                                                              )
+                                                            : "-"}
+                                                    </TableCell>
+                                                    <TableCell className="text-center font-bold tabular-nums text-amber-600 dark:text-amber-400">
+                                                        {result
+                                                            .role_overall_scores
+                                                            .subordinate !==
+                                                        null
+                                                            ? result.role_overall_scores.subordinate.toFixed(
+                                                                  2,
+                                                              )
+                                                            : "-"}
+                                                    </TableCell>
+                                                    <TableCell className="text-center font-bold tabular-nums text-sky-600 dark:text-sky-400">
+                                                        {result.overall_score !==
+                                                        null
+                                                            ? result.overall_score.toFixed(
+                                                                  2,
+                                                              )
+                                                            : "-"}
+                                                    </TableCell>
+                                                </TableRow>
+                                            </TableFooter>
                                         </Table>
                                     </div>
                                 </CardContent>
@@ -267,20 +314,151 @@ export default function AssessmentResultShow({
                         >
                             {result.dimensions.map((dim) => (
                                 <Card key={dim.id}>
-                                    <CardHeader>
-                                        <CardTitle className="text-base">
-                                            Dimensi: {dim.name}
-                                        </CardTitle>
-                                        <CardDescription className="text-xs">
-                                            Perbandingan skor untuk seluruh
-                                            sub-dimensi pada {dim.name}.
-                                        </CardDescription>
+                                    <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                        <div>
+                                            <CardTitle className="text-base">
+                                                Dimensi: {dim.name}
+                                            </CardTitle>
+                                            <CardDescription className="text-xs">
+                                                Perbandingan skor dan rata-rata
+                                                (Average) seluruh sub-dimensi
+                                                pada {dim.name}.
+                                            </CardDescription>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                                            <span className="rounded-md border bg-muted/40 px-2.5 py-1 font-medium text-muted-foreground">
+                                                Rata-rata Dimensi:{" "}
+                                                <strong className="tabular-nums text-sky-600 dark:text-sky-400">
+                                                    {dim.scores.average !== null
+                                                        ? dim.scores.average.toFixed(
+                                                              2,
+                                                          )
+                                                        : "-"}
+                                                </strong>
+                                            </span>
+                                        </div>
                                     </CardHeader>
                                     <CardContent className="space-y-6">
                                         <SubDimensionBarChart
                                             dimensionName={dim.name}
                                             subDimensions={dim.sub_dimensions}
                                         />
+
+                                        {/* Tabel Rincian Sub-Dimensi */}
+                                        <div className="overflow-x-auto rounded-md border">
+                                            <Table>
+                                                <TableHeader className="bg-muted/50">
+                                                    <TableRow>
+                                                        <TableHead className="font-semibold">
+                                                            Sub-Dimensi
+                                                        </TableHead>
+                                                        <TableHead className="text-center">
+                                                            Diri Sendiri
+                                                        </TableHead>
+                                                        <TableHead className="text-center">
+                                                            Atasan
+                                                        </TableHead>
+                                                        <TableHead className="text-center">
+                                                            Bawahan
+                                                        </TableHead>
+                                                        <TableHead className="text-center">
+                                                            Rata-rata
+                                                        </TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody className="bg-white dark:bg-card">
+                                                    {dim.sub_dimensions.map(
+                                                        (sd) => (
+                                                            <TableRow
+                                                                key={sd.id}
+                                                            >
+                                                                <TableCell className="font-medium">
+                                                                    {sd.name}
+                                                                </TableCell>
+                                                                <TableCell className="text-center font-medium tabular-nums text-indigo-600 dark:text-indigo-400">
+                                                                    {sd.scores
+                                                                        .self !==
+                                                                    null
+                                                                        ? sd.scores.self.toFixed(
+                                                                              2,
+                                                                          )
+                                                                        : "-"}
+                                                                </TableCell>
+                                                                <TableCell className="text-center font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
+                                                                    {sd.scores
+                                                                        .boss !==
+                                                                    null
+                                                                        ? sd.scores.boss.toFixed(
+                                                                              2,
+                                                                          )
+                                                                        : "-"}
+                                                                </TableCell>
+                                                                <TableCell className="text-center font-medium tabular-nums text-amber-600 dark:text-amber-400">
+                                                                    {sd.scores
+                                                                        .subordinate !==
+                                                                    null
+                                                                        ? sd.scores.subordinate.toFixed(
+                                                                              2,
+                                                                          )
+                                                                        : "-"}
+                                                                </TableCell>
+                                                                <TableCell className="text-center font-bold tabular-nums text-sky-600 dark:text-sky-400">
+                                                                    {sd.scores
+                                                                        .average !==
+                                                                    null
+                                                                        ? sd.scores.average.toFixed(
+                                                                              2,
+                                                                          )
+                                                                        : "-"}
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ),
+                                                    )}
+                                                </TableBody>
+                                                <TableFooter>
+                                                    <TableRow className="bg-muted/60 font-bold">
+                                                        <TableCell className="font-bold text-foreground">
+                                                            Rata-rata {dim.name}{" "}
+                                                            (Average)
+                                                        </TableCell>
+                                                        <TableCell className="text-center font-bold tabular-nums text-indigo-600 dark:text-indigo-400">
+                                                            {dim.scores.self !==
+                                                            null
+                                                                ? dim.scores.self.toFixed(
+                                                                      2,
+                                                                  )
+                                                                : "-"}
+                                                        </TableCell>
+                                                        <TableCell className="text-center font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                                                            {dim.scores.boss !==
+                                                            null
+                                                                ? dim.scores.boss.toFixed(
+                                                                      2,
+                                                                  )
+                                                                : "-"}
+                                                        </TableCell>
+                                                        <TableCell className="text-center font-bold tabular-nums text-amber-600 dark:text-amber-400">
+                                                            {dim.scores
+                                                                .subordinate !==
+                                                            null
+                                                                ? dim.scores.subordinate.toFixed(
+                                                                      2,
+                                                                  )
+                                                                : "-"}
+                                                        </TableCell>
+                                                        <TableCell className="text-center font-bold tabular-nums text-sky-600 dark:text-sky-400">
+                                                            {dim.scores
+                                                                .average !==
+                                                            null
+                                                                ? dim.scores.average.toFixed(
+                                                                      2,
+                                                                  )
+                                                                : "-"}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                </TableFooter>
+                                            </Table>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             ))}

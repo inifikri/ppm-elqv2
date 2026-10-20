@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Loader2, AlertCircle, RefreshCw, LayoutGrid } from 'lucide-react';
+import { CheckCircle2, AlertCircle, RefreshCw, LayoutGrid } from 'lucide-react';
 
 export type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -35,8 +35,11 @@ export function AssessmentProgress({
                     {/* Autosave Status */}
                     <div className="flex items-center text-xs">
                         {autosaveStatus === 'saving' && (
-                            <span className="flex items-center gap-1 text-muted-foreground">
-                                <Loader2 className="size-3 animate-spin text-primary" />
+                            <span className="flex items-center gap-1.5 text-muted-foreground">
+                                <progress
+                                    aria-label="Menyimpan jawaban"
+                                    className="loading-spinner loading-spinner-xs"
+                                />
                                 <span className="hidden sm:inline">Menyimpan...</span>
                             </span>
                         )}

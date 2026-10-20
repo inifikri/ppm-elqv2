@@ -3,6 +3,12 @@ import type { ChartData, ChartOptions } from 'chart.js';
 import { ChartCanvas, type AccessibleTableData } from './chart-canvas';
 import type { SubDimensionScore } from '@/types/assessment';
 
+function computeMean(values: (number | null | undefined)[]): number | null {
+    const valid = values.filter((v): v is number => v !== null && v !== undefined);
+    if (valid.length === 0) return null;
+    return Number((valid.reduce((acc, v) => acc + v, 0) / valid.length).toFixed(2));
+}
+
 export function SubDimensionBarChart({
     dimensionName,
     subDimensions,
@@ -34,6 +40,12 @@ export function SubDimensionBarChart({
                     backgroundColor: '#f59e0b',
                     borderRadius: 4,
                 },
+                {
+                    label: 'Rata-rata (Average)',
+                    data: subDimensions.map((sd) => sd.scores.average ?? 0),
+                    backgroundColor: '#0ea5e9',
+                    borderRadius: 4,
+                },
             ],
         };
     }, [subDimensions]);
@@ -61,10 +73,17 @@ export function SubDimensionBarChart({
                 sd.scores.subordinate,
                 sd.scores.average,
             ]),
+            footer: [
+                `Rata-rata ${dimensionName}`,
+                computeMean(subDimensions.map((sd) => sd.scores.self)),
+                computeMean(subDimensions.map((sd) => sd.scores.boss)),
+                computeMean(subDimensions.map((sd) => sd.scores.subordinate)),
+                computeMean(subDimensions.map((sd) => sd.scores.average)),
+            ],
         };
-    }, [subDimensions]);
+    }, [dimensionName, subDimensions]);
 
-    const height = Math.max(260, subDimensions.length * 48);
+    const height = Math.max(280, subDimensions.length * 56);
 
     return (
         <ChartCanvas

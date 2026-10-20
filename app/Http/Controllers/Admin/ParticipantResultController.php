@@ -10,7 +10,8 @@ use App\Http\Requests\Admin\SendResultPdfRequest;
 use App\Jobs\SendAssessmentResultPdfJob;
 use App\Models\EmailLog;
 use App\Models\User;
-use App\Services\Scoring\ResultChartRenderer;
+use App\Services\Reports\AssessmentPdfGenerator;
+use App\Services\Reports\AssessmentReportBuilder;
 use App\Services\Scoring\ScoreCalculator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +19,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -60,21 +62,27 @@ class ParticipantResultController extends Controller
      */
     public function pdf(
         User $participant,
-        ScoreCalculator $calculator,
-        ResultChartRenderer $chartRenderer
-    ): HttpResponse {
+        AssessmentReportBuilder $reportBuilder,
+        AssessmentPdfGenerator $pdfGenerator,
+    ): HttpResponse|RedirectResponse {
         Gate::authorize(PermissionName::ResultsExport->value);
 
-        $participant->loadMissing('participantProfile.company');
-        $result = $calculator->calculate($participant);
-        $radarSvg = $chartRenderer->renderRadarSvg($result['dimensions'] ?? []);
+        $reportData = $reportBuilder->build($participant);
 
-        $pdf = Pdf::loadView('pdf.assessment-result', [
-            'result' => $result,
-            'radarSvg' => $radarSvg,
-        ]);
+        if (! $reportData->hasData) {
+            return back()->with('error', 'Belum ada data penilaian yang selesai untuk peserta ini.');
+        }
 
-        return $pdf->download("hasil-assessment-{$participant->name}.pdf");
+        // Catat audit activity_log (FR-044: tanpa nilai jawaban, token, atau isi PDF)
+        activity('results')
+            ->causedBy(request()->user())
+            ->performedOn($participant)
+            ->log('Download PDF hasil assessment');
+
+        $slug = Str::slug($participant->name) ?: 'peserta';
+        $filename = "ELQ-Result_{$slug}_".now()->format('Ymd').'.pdf';
+
+        return $pdfGenerator->downloadResponse($reportData, $filename);
     }
 
     /**

@@ -9,15 +9,22 @@ use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Str;
 
 class AssessmentResultMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public string $filename;
+
     public function __construct(
         public User $participant,
-        public string $pdfContent
-    ) {}
+        public string $pdfContent,
+        ?string $filename = null,
+    ) {
+        $slug = Str::slug($participant->name) ?: 'peserta';
+        $this->filename = $filename ?? ("ELQ-Result_{$slug}_".now()->format('Ymd').'.pdf');
+    }
 
     public function envelope(): Envelope
     {
@@ -30,6 +37,10 @@ class AssessmentResultMail extends Mailable
     {
         return new Content(
             view: 'mail.assessment-result',
+            with: [
+                'participant' => $this->participant,
+                'filename' => $this->filename,
+            ],
         );
     }
 
@@ -41,7 +52,7 @@ class AssessmentResultMail extends Mailable
         return [
             Attachment::fromData(
                 fn () => $this->pdfContent,
-                "hasil-assessment-{$this->participant->name}.pdf"
+                $this->filename
             )->withMime('application/pdf'),
         ];
     }

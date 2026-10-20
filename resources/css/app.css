@@ -237,11 +237,143 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-        *,
-        ::before,
-        ::after {
+        *:not(.loading-spinner),
+        *:not(.loading-spinner)::before,
+        *:not(.loading-spinner)::after {
             animation-duration: 0.01ms !important;
             transition-duration: 0.01ms !important;
         }
     }
 }
+
+@property --arc-start {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
+
+@property --arc-end {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
+
+@property --progress-dash-animation {
+    syntax: '*';
+    inherits: false;
+    initial-value: , progress-dash 2.6s ease-in-out infinite;
+}
+
+@keyframes progress-spin {
+    to {
+        rotate: 1turn;
+    }
+}
+
+@keyframes progress-dash {
+    from {
+        --arc-start: 0deg;
+        --arc-end: 24deg;
+    }
+    50% {
+        --arc-start: 96deg;
+        --arc-end: 330deg;
+    }
+    to {
+        --arc-start: 360deg;
+        --arc-end: 384deg;
+    }
+}
+
+progress.loading-spinner:indeterminate::-webkit-progress-bar,
+progress.loading-spinner:indeterminate::-webkit-progress-value {
+    display: none;
+    background: none;
+}
+
+progress.loading-spinner:indeterminate::-moz-progress-bar {
+    display: none;
+    background: none;
+}
+
+progress.loading-spinner:indeterminate::slider-fill {
+    display: none;
+    background: none;
+}
+
+progress.loading-spinner:indeterminate {
+    --_from: calc(90deg + var(--arc-start, 0deg));
+    --_to: calc(90deg + var(--arc-end, 165deg));
+    --size: 3.5rem;
+    --thickness: 3.5px;
+    --spinner-color: var(--primary);
+    --track-color: color-mix(in oklab, var(--primary) 16%, transparent);
+    --spinner-duration: 1.35s;
+    --_used-spinner-duration: var(--spinner-duration);
+
+    position: relative;
+    display: inline-block;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 9999px;
+    appearance: none;
+    background: conic-gradient(
+            from var(--_from),
+            transparent 0deg,
+            color-mix(in oklab, var(--spinner-color) 35%, transparent)
+                calc((var(--_to) - var(--_from)) * 0.25),
+            var(--spinner-color) calc(var(--_to) - var(--_from)),
+            transparent 0
+        )
+        var(--track-color);
+    animation:
+        progress-spin var(--_used-spinner-duration) linear infinite
+        var(--progress-dash-animation, );
+}
+
+@supports (background-clip: border-area) {
+    progress.loading-spinner:indeterminate {
+        background-clip: border-area;
+        border: var(--thickness) solid transparent;
+        background-origin: border-box;
+    }
+}
+
+@supports not (background-clip: border-area) {
+    progress.loading-spinner:indeterminate {
+        --clip-boundary: calc(100% - var(--thickness));
+        -webkit-mask-image: radial-gradient(
+            farthest-side,
+            transparent calc(var(--clip-boundary) - 0.5px),
+            black var(--clip-boundary)
+        );
+        mask-image: radial-gradient(
+            farthest-side,
+            transparent calc(var(--clip-boundary) - 0.5px),
+            black var(--clip-boundary)
+        );
+        border: 0;
+    }
+}
+
+progress.loading-spinner.loading-spinner-lg:indeterminate {
+    --size: 4.5rem;
+    --thickness: 4px;
+}
+
+progress.loading-spinner.loading-spinner-sm:indeterminate {
+    --size: 1.25rem;
+    --thickness: 2.25px;
+}
+
+progress.loading-spinner.loading-spinner-xs:indeterminate {
+    --size: 0.875rem;
+    --thickness: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    progress.loading-spinner:indeterminate {
+        --_used-spinner-duration: 6s;
+    }
+}
+

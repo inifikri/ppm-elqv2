@@ -1,5 +1,5 @@
-import { Building2, ChevronsUpDown, Plus } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Building2, ChevronsUpDown, Plus, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FormField } from '@/components/form-field';
 import { Button } from '@/components/ui/button';
 import {
@@ -46,39 +46,81 @@ function Highlight({ text, term }: { text: string; term: string }) {
     );
 }
 
-export function CompanyCombobox({
-    id,
-    value,
-    onChange,
-    error,
-}: {
-    id: string;
+export type CompanyComboboxProps = {
+    id?: string;
     value: string;
     onChange: (v: string) => void;
     error?: string;
-}) {
+    label?: string;
+    description?: string;
+    placeholder?: string;
+    required?: boolean;
+    disabled?: boolean;
+    className?: string;
+    initialSuggestions?: string[];
+};
+
+export function CompanyCombobox({
+    id = 'company_name',
+    value,
+    onChange,
+    error,
+    label = 'Perusahaan',
+    description,
+    placeholder = 'Cari atau ketik nama perusahaan',
+    required = true,
+    disabled = false,
+    className,
+    initialSuggestions = [],
+}: CompanyComboboxProps) {
     const [open, setOpen] = useState(false);
     const [term, setTerm] = useState('');
-    const [items, setItems] = useState<string[]>([]);
+    const [remoteItems, setRemoteItems] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const cache = useRef(new Map<string, string[]>());
 
+    const q = term.trim();
+    const qNorm = normalize(q);
+
+    // Filter local suggestions instantly when user types or opens
+    const localMatches = useMemo(() => {
+        if (!initialSuggestions || initialSuggestions.length === 0) {
+            return [];
+        }
+        if (qNorm.length === 0) {
+            return initialSuggestions.slice(0, 10);
+        }
+        return initialSuggestions
+            .filter((c) => normalize(c).includes(qNorm))
+            .slice(0, 10);
+    }, [initialSuggestions, qNorm]);
+
+    // Combined unique items (local + remote)
+    const items = useMemo(() => {
+        const seen = new Set<string>();
+        const merged: string[] = [];
+
+        for (const item of [...localMatches, ...remoteItems]) {
+            const key = normalize(item);
+            if (!seen.has(key)) {
+                seen.add(key);
+                merged.push(item);
+            }
+        }
+
+        return merged;
+    }, [localMatches, remoteItems]);
+
     useEffect(() => {
-        const q = term.trim();
-
-        if (normalize(q).length < MIN_CHARS) {
-            setItems([]);
+        if (qNorm.length < MIN_CHARS) {
+            setRemoteItems([]);
             setLoading(false);
-
             return;
         }
 
-        const key = normalize(q);
-        const hit = cache.current.get(key);
-
+        const hit = cache.current.get(qNorm);
         if (hit) {
-            setItems(hit);
-
+            setRemoteItems(hit);
             return;
         }
 
@@ -92,13 +134,12 @@ export function CompanyCombobox({
                 );
                 const data =
                     status === 200 ? (body.data ?? []).slice(0, 8) : [];
-                cache.current.set(key, data);
-                setItems(data);
+                cache.current.set(qNorm, data);
+                setRemoteItems(data);
                 setLoading(false);
             } catch {
-                // dibatalkan atau jaringan gagal: biarkan opsi "perusahaan baru" tetap bisa dipakai
                 if (!ctrl.signal.aborted) {
-                    setItems([]);
+                    setRemoteItems([]);
                     setLoading(false);
                 }
             }
@@ -108,66 +149,133 @@ export function CompanyCombobox({
             clearTimeout(timer);
             ctrl.abort();
         };
-    }, [term]);
+    }, [q, qNorm]);
 
     const pick = (name: string) => {
         onChange(name);
         setOpen(false);
+        setTerm('');
     };
-    const q = term.trim();
-    const exact = items.some((n) => normalize(n) === normalize(q));
+
+    const handleClear = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onChange('');
+        setTerm('');
+    };
+
+    const exact = items.some((n) => normalize(n) === qNorm);
 
     return (
-        <FormField id={id} label="Perusahaan" error={error} required>
-            <Popover open={open} onOpenChange={setOpen}>
+        <FormField
+            id={id}
+            label={label}
+            description={description}
+            error={error}
+            required={required}
+            className={className}
+        >
+            <Popover
+                open={open}
+                onOpenChange={(next) => {
+                    setOpen(next);
+                    if (!next) {
+                        setTerm('');
+                    }
+                }}
+            >
                 <PopoverTrigger asChild>
-                    <Button
-                        id={id}
-                        type="button"
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={open}
-                        aria-haspopup="listbox"
-                        aria-required="true"
-                        aria-invalid={error ? true : undefined}
-                        aria-describedby={error ? `${id}-error` : undefined}
-                        className="h-field w-full justify-start gap-2 px-3 font-normal pointer-coarse:h-touch"
-                    >
-                        <Building2
-                            className="size-4 shrink-0 text-muted-foreground"
-                            aria-hidden="true"
-                        />
-                        <span
+                    <div className="relative w-full">
+                        <Button
+                            id={id}
+                            type="button"
+                            variant="outline"
+                            role="combobox"
+                            disabled={disabled}
+                            aria-expanded={open}
+                            aria-haspopup="listbox"
+                            aria-required={required}
+                            aria-invalid={error ? true : undefined}
+                            aria-describedby={error ? `${id}-error` : undefined}
                             className={cn(
-                                'truncate',
-                                !value && 'text-muted-foreground',
+                                'h-field w-full justify-start gap-2 px-3 font-normal pointer-coarse:h-touch',
+                                value && 'pr-8',
                             )}
                         >
-                            {value || 'Cari atau ketik nama perusahaan'}
-                        </span>
-                        <ChevronsUpDown
-                            className="ml-auto size-4 shrink-0 text-muted-foreground"
-                            aria-hidden="true"
-                        />
-                    </Button>
+                            <Building2
+                                className="size-4 shrink-0 text-muted-foreground"
+                                aria-hidden="true"
+                            />
+                            <span
+                                className={cn(
+                                    'truncate text-left flex-1',
+                                    !value && 'text-muted-foreground',
+                                )}
+                            >
+                                {value || placeholder}
+                            </span>
+                            <ChevronsUpDown
+                                className="ml-auto size-4 shrink-0 text-muted-foreground"
+                                aria-hidden="true"
+                            />
+                        </Button>
+                        {value && !disabled && (
+                            <button
+                                type="button"
+                                onClick={handleClear}
+                                aria-label="Hapus pilihan perusahaan"
+                                className="absolute right-7 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors cursor-pointer"
+                            >
+                                <X className="size-3.5" />
+                            </button>
+                        )}
+                    </div>
                 </PopoverTrigger>
-                <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
+                <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
                     <Command shouldFilter={false}>
                         <CommandInput
                             value={term}
                             onValueChange={setTerm}
                             maxLength={255}
-                            placeholder="Ketik minimal 2 huruf…"
+                            placeholder={placeholder}
                             aria-label="Cari perusahaan"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    const trimmed = term.trim();
+                                    if (
+                                        trimmed.length >= MIN_CHARS &&
+                                        !/<\/?[a-z!][\s\S]*?>/i.test(trimmed)
+                                    ) {
+                                        e.preventDefault();
+                                        const exactMatch = items.find(
+                                            (n) => normalize(n) === normalize(trimmed),
+                                        );
+                                        pick(exactMatch ?? trimmed);
+                                    }
+                                }
+                            }}
                         />
                         <CommandList>
                             <p role="status" className="sr-only">
                                 {loading ? 'Mencari…' : `${items.length} saran`}
                             </p>
-                            {normalize(q).length < MIN_CHARS && (
-                                <p className="px-2 py-3 text-center text-xs text-muted-foreground">
-                                    Ketik minimal {MIN_CHARS} huruf untuk
-                                    melihat saran.
+                            {/<\/?[a-z!][\s\S]*?>/i.test(term) && (
+                                <p
+                                    role="alert"
+                                    className="px-2 py-3 text-center text-xs text-destructive"
+                                >
+                                    Input tidak boleh mengandung tag HTML.
+                                </p>
+                            )}
+                            {!/<\/?[a-z!][\s\S]*?>/i.test(term) &&
+                                items.length === 0 &&
+                                qNorm.length < MIN_CHARS && (
+                                    <p className="px-2 py-3 text-center text-xs text-muted-foreground">
+                                        Ketik minimal {MIN_CHARS} huruf untuk melihat saran.
+                                    </p>
+                                )}
+                            {items.length > 0 && qNorm.length < MIN_CHARS && (
+                                <p className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                    Perusahaan Terdaftar
                                 </p>
                             )}
                             {items.map((name) => (
@@ -176,23 +284,26 @@ export function CompanyCombobox({
                                     value={name}
                                     onSelect={() => pick(name)}
                                 >
+                                    <Building2 className="size-3.5 shrink-0 text-muted-foreground mr-1.5" />
                                     <span className="truncate">
                                         <Highlight text={name} term={q} />
                                     </span>
                                 </CommandItem>
                             ))}
-                            {normalize(q).length >= MIN_CHARS && !exact && (
-                                <CommandItem
-                                    value={`__new__${q}`}
-                                    onSelect={() => pick(q)}
-                                >
-                                    <Plus aria-hidden="true" />
-                                    <span className="truncate">
-                                        Gunakan &ldquo;{q}&rdquo; sebagai
-                                        perusahaan baru
-                                    </span>
-                                </CommandItem>
-                            )}
+                            {qNorm.length >= MIN_CHARS &&
+                                !exact &&
+                                !/<\/?[a-z!][\s\S]*?>/i.test(q) && (
+                                    <CommandItem
+                                        value={`__new__${q}`}
+                                        onSelect={() => pick(q)}
+                                        className="text-primary font-medium"
+                                    >
+                                        <Plus className="size-4 shrink-0 mr-1.5" aria-hidden="true" />
+                                        <span className="truncate">
+                                            Gunakan &ldquo;{q}&rdquo; sebagai perusahaan baru
+                                        </span>
+                                    </CommandItem>
+                                )}
                         </CommandList>
                     </Command>
                 </PopoverContent>

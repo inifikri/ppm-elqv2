@@ -17,7 +17,7 @@ import {
     type ChartOptions,
     type ChartType,
 } from 'chart.js';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useAppearance } from '@/hooks/use-appearance';
@@ -40,6 +40,7 @@ ChartJS.register(
 export type AccessibleTableData = {
     headers: string[];
     rows: (string | number | null | undefined)[][];
+    footer?: (string | number | null | undefined)[];
 };
 
 export type ChartCanvasProps = {
@@ -199,6 +200,21 @@ export function ChartCanvas({
                                         </TableRow>
                                     ))}
                                 </TableBody>
+                                {accessibleSummary.footer && (
+                                    <TableFooter>
+                                        <TableRow className="bg-muted/60 font-bold">
+                                            {accessibleSummary.footer.map((cell, fIdx) => (
+                                                <TableCell key={fIdx} className="py-2 font-bold">
+                                                    {cell !== null && cell !== undefined
+                                                        ? typeof cell === 'number'
+                                                            ? cell.toFixed(2)
+                                                            : cell
+                                                        : '-'}
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                    </TableFooter>
+                                )}
                             </Table>
                         </div>
                     )}

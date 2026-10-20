@@ -89,7 +89,7 @@ class ParticipantBulkController extends Controller
                 }
 
                 $emailLog = EmailLog::create([
-                    'type' => EmailLogType::AssessmentResult,
+                    'type' => EmailLogType::ResultShare,
                     'recipient_email' => $participant->email,
                     'user_id' => $participant->id,
                     'status' => EmailLogStatus::Queued,

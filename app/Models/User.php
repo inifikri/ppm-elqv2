@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\EmailLogStatus;
+use App\Enums\EmailLogType;
 use Database\Factories\UserFactory;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -65,6 +68,36 @@ class User extends Authenticatable implements MustVerifyEmail
     public function emailLogs(): HasMany
     {
         return $this->hasMany(EmailLog::class);
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        try {
+            $this->notify(new VerifyEmail);
+
+            $this->emailLogs()->create([
+                'type' => EmailLogType::EmailVerification,
+                'recipient_email' => $this->email,
+                'status' => EmailLogStatus::Sent,
+                'attempts' => 1,
+                'sent_at' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            $this->emailLogs()->create([
+                'type' => EmailLogType::EmailVerification,
+                'recipient_email' => $this->email,
+                'status' => EmailLogStatus::Failed,
+                'attempts' => 1,
+                'error_message' => $e->getMessage(),
+                'failed_at' => now(),
+            ]);
+
+            if (request()->routeIs('verification.send')) {
+                throw $e;
+            }
+        }
     }
 
     /**

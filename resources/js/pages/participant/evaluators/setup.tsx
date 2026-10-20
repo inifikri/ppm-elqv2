@@ -21,6 +21,7 @@ import {
     AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { store as storeEvaluators } from '@/routes/participant/evaluators';
 
 const TOTAL_STEPS = 7;
 
@@ -43,6 +44,7 @@ export default function EvaluatorsSetup({
 }) {
     const [step, setStep] = useState<number>(1);
     const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+    const [isEditingFromReview, setIsEditingFromReview] = useState<boolean>(false);
 
     const { data, setData, post, processing, errors } = useForm({
         boss_email: '',
@@ -52,24 +54,38 @@ export default function EvaluatorsSetup({
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const myEmail = participantEmail.toLowerCase().trim();
 
-    // Sinkronkan step dengan history back/forward HP
+    // Sinkronkan step dengan history back/forward HP & selalu mulai dari Step 1
     useEffect(() => {
+        try {
+            window.sessionStorage.removeItem(`elq_evaluators_draft_${myEmail}`);
+        } catch {
+            // Abaikan bila sessionStorage tidak tersedia
+        }
+
         window.history.replaceState({ step: 1 }, '', window.location.pathname);
 
         const handlePopState = (e: PopStateEvent) => {
             if (e.state && typeof e.state.step === 'number') {
                 setStep(e.state.step);
+                if (e.state.step === 7) {
+                    setIsEditingFromReview(false);
+                }
             }
         };
 
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
-    }, []);
+    }, [myEmail]);
 
     const goToStep = (nextStep: number) => {
         window.history.pushState({ step: nextStep }, '', `${window.location.pathname}?step=${nextStep}`);
         setStep(nextStep);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleEditFromReview = (targetStep: number) => {
+        setIsEditingFromReview(true);
+        goToStep(targetStep);
     };
 
     const handleSubChange = (index: number, val: string) => {
@@ -170,6 +186,21 @@ export default function EvaluatorsSetup({
         goToStep(step + 1);
     };
 
+    const handleSaveEdit = () => {
+        if (!validateStep(step)) {
+            toast.error('Harap periksa kembali format email sebelum menyimpan.');
+            return;
+        }
+        setIsEditingFromReview(false);
+        goToStep(7);
+        toast.success('Data penilai berhasil diperbarui.');
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditingFromReview(false);
+        goToStep(7);
+    };
+
     const handleBack = () => {
         if (step > 1) {
             goToStep(step - 1);
@@ -177,12 +208,13 @@ export default function EvaluatorsSetup({
     };
 
     const handleFinalSubmit = () => {
-        post('/participant/evaluators', {
+        post(storeEvaluators.url(), {
             preserveScroll: true,
             onError: (serverErrors) => {
                 toast.error('Terjadi kesalahan validasi penilai.');
 
-                // Arahkan otomatis ke langkah yang bermasalah
+                setIsEditingFromReview(true);
+                // Arahkan otomatis ke langkah yang bermasalah dalam mode edit
                 if (serverErrors.boss_email) {
                     goToStep(3);
                 } else if (serverErrors['subordinate_emails.0'] || serverErrors.subordinate_emails) {
@@ -198,9 +230,18 @@ export default function EvaluatorsSetup({
 
     if (processing) {
         return (
-            <div className="flex min-h-[60dvh] items-center justify-center py-12">
-                <QuestionsLoader isResuming={false} />
-            </div>
+            <>
+                <Head title="Mengirim Undangan Penilai - ELQ 360°" />
+                <QuestionsLoader
+                    mode="sending-invitations"
+                    isResuming={false}
+                    invitationTarget={{
+                        bossEmail: data.boss_email,
+                        subordinateEmails: data.subordinate_emails,
+                        totalQuestions,
+                    }}
+                />
+            </>
         );
     }
 
@@ -216,13 +257,41 @@ export default function EvaluatorsSetup({
                             ? 'Mulai Pendaftaran'
                             : step === 7
                             ? 'Kirim Undangan & Mulai Asesmen'
+                            : isEditingFromReview
+                            ? 'Simpan & Kembali ke Tinjauan'
                             : 'Lanjut'
                     }
-                    onPrimaryClick={step === 7 ? handleFinalSubmit : handleNext}
-                    primaryIcon={step === 7 ? <Send className="size-4" /> : <ArrowRight className="size-4" />}
+                    onPrimaryClick={
+                        step === 7
+                            ? handleFinalSubmit
+                            : isEditingFromReview
+                            ? handleSaveEdit
+                            : handleNext
+                    }
+                    primaryIcon={
+                        step === 7 ? (
+                            <Send className="size-4" />
+                        ) : isEditingFromReview ? (
+                            <CheckCircle2 className="size-4" />
+                        ) : (
+                            <ArrowRight className="size-4" />
+                        )
+                    }
                     primaryLoading={processing}
-                    secondaryLabel={step > 1 ? 'Kembali' : undefined}
-                    onSecondaryClick={step > 1 ? handleBack : undefined}
+                    secondaryLabel={
+                        isEditingFromReview
+                            ? 'Batal'
+                            : step > 1
+                            ? 'Kembali'
+                            : undefined
+                    }
+                    onSecondaryClick={
+                        isEditingFromReview
+                            ? handleCancelEdit
+                            : step > 1
+                            ? handleBack
+                            : undefined
+                    }
                     secondaryIcon={<ArrowLeft className="size-4" />}
                 />
             }
@@ -325,6 +394,24 @@ export default function EvaluatorsSetup({
                     title="Alamat Email Atasan Langsung"
                     description="Undangan penilaian akan otomatis dikirimkan ke alamat email ini."
                 >
+                    {isEditingFromReview && (
+                        <div className="mb-4 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-primary">
+                            <div className="flex items-center gap-2">
+                                <Edit2 className="size-3.5 shrink-0" />
+                                <span>Sedang mengubah email atasan dari <strong>Langkah 7 (Tinjau & Kirim)</strong></span>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleCancelEdit}
+                                className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10 px-2"
+                            >
+                                Batal
+                            </Button>
+                        </div>
+                    )}
+
                     <div className="space-y-2">
                         <Label htmlFor="boss_email" className="text-xs font-semibold text-foreground">
                             Email Atasan <span className="text-destructive">*</span>
@@ -338,6 +425,16 @@ export default function EvaluatorsSetup({
                             placeholder="nama.atasan@perusahaan.com"
                             value={data.boss_email}
                             onChange={(e) => handleBossChange(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    if (isEditingFromReview) {
+                                        handleSaveEdit();
+                                    } else {
+                                        handleNext();
+                                    }
+                                }
+                            }}
                             className="h-12 text-base sm:text-sm"
                             aria-invalid={Boolean(clientErrors.boss_email || errors.boss_email)}
                             aria-describedby="boss-error"
@@ -361,6 +458,24 @@ export default function EvaluatorsSetup({
                     title="Alamat Email Bawahan Langsung (1/3)"
                     description="Rekan kerja bawahan langsung pertama Anda."
                 >
+                    {isEditingFromReview && (
+                        <div className="mb-4 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-primary">
+                            <div className="flex items-center gap-2">
+                                <Edit2 className="size-3.5 shrink-0" />
+                                <span>Sedang mengubah email bawahan 1 dari <strong>Langkah 7 (Tinjau & Kirim)</strong></span>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleCancelEdit}
+                                className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10 px-2"
+                            >
+                                Batal
+                            </Button>
+                        </div>
+                    )}
+
                     <div className="space-y-2">
                         <Label htmlFor="sub_0" className="text-xs font-semibold text-foreground">
                             Email Bawahan 1 <span className="text-destructive">*</span>
@@ -374,6 +489,16 @@ export default function EvaluatorsSetup({
                             placeholder="nama.bawahan1@perusahaan.com"
                             value={data.subordinate_emails[0]}
                             onChange={(e) => handleSubChange(0, e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    if (isEditingFromReview) {
+                                        handleSaveEdit();
+                                    } else {
+                                        handleNext();
+                                    }
+                                }
+                            }}
                             className="h-12 text-base sm:text-sm"
                             aria-invalid={Boolean(clientErrors.subordinate_0 || errors['subordinate_emails.0'])}
                             aria-describedby="sub-0-error"
@@ -394,6 +519,24 @@ export default function EvaluatorsSetup({
                     title="Alamat Email Bawahan Langsung (2/3)"
                     description="Rekan kerja bawahan langsung kedua Anda."
                 >
+                    {isEditingFromReview && (
+                        <div className="mb-4 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-primary">
+                            <div className="flex items-center gap-2">
+                                <Edit2 className="size-3.5 shrink-0" />
+                                <span>Sedang mengubah email bawahan 2 dari <strong>Langkah 7 (Tinjau & Kirim)</strong></span>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleCancelEdit}
+                                className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10 px-2"
+                            >
+                                Batal
+                            </Button>
+                        </div>
+                    )}
+
                     <div className="space-y-2">
                         <Label htmlFor="sub_1" className="text-xs font-semibold text-foreground">
                             Email Bawahan 2 <span className="text-destructive">*</span>
@@ -407,6 +550,16 @@ export default function EvaluatorsSetup({
                             placeholder="nama.bawahan2@perusahaan.com"
                             value={data.subordinate_emails[1]}
                             onChange={(e) => handleSubChange(1, e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    if (isEditingFromReview) {
+                                        handleSaveEdit();
+                                    } else {
+                                        handleNext();
+                                    }
+                                }
+                            }}
                             className="h-12 text-base sm:text-sm"
                             aria-invalid={Boolean(clientErrors.subordinate_1 || errors['subordinate_emails.1'])}
                             aria-describedby="sub-1-error"
@@ -427,6 +580,24 @@ export default function EvaluatorsSetup({
                     title="Alamat Email Bawahan Langsung (3/3)"
                     description="Rekan kerja bawahan langsung ketiga Anda."
                 >
+                    {isEditingFromReview && (
+                        <div className="mb-4 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-primary">
+                            <div className="flex items-center gap-2">
+                                <Edit2 className="size-3.5 shrink-0" />
+                                <span>Sedang mengubah email bawahan 3 dari <strong>Langkah 7 (Tinjau & Kirim)</strong></span>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleCancelEdit}
+                                className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10 px-2"
+                            >
+                                Batal
+                            </Button>
+                        </div>
+                    )}
+
                     <div className="space-y-2">
                         <Label htmlFor="sub_2" className="text-xs font-semibold text-foreground">
                             Email Bawahan 3 <span className="text-destructive">*</span>
@@ -440,6 +611,16 @@ export default function EvaluatorsSetup({
                             placeholder="nama.bawahan3@perusahaan.com"
                             value={data.subordinate_emails[2]}
                             onChange={(e) => handleSubChange(2, e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    if (isEditingFromReview) {
+                                        handleSaveEdit();
+                                    } else {
+                                        handleNext();
+                                    }
+                                }
+                            }}
                             className="h-12 text-base sm:text-sm"
                             aria-invalid={Boolean(clientErrors.subordinate_2 || errors['subordinate_emails.2'])}
                             aria-describedby="sub-2-error"
@@ -480,12 +661,13 @@ export default function EvaluatorsSetup({
                                 <Button
                                     type="button"
                                     variant="ghost"
-                                    size="icon"
-                                    onClick={() => goToStep(3)}
-                                    className="size-8 text-primary hover:text-primary"
+                                    size="sm"
+                                    onClick={() => handleEditFromReview(3)}
+                                    className="h-8 px-2.5 text-xs text-primary hover:text-primary hover:bg-primary/10 gap-1.5"
                                     aria-label="Ubah email atasan"
                                 >
                                     <Edit2 className="size-3.5" />
+                                    <span>Ubah</span>
                                 </Button>
                             </CardContent>
                         </Card>
@@ -510,12 +692,13 @@ export default function EvaluatorsSetup({
                                     <Button
                                         type="button"
                                         variant="ghost"
-                                        size="icon"
-                                        onClick={() => goToStep(4 + idx)}
-                                        className="size-8 text-primary hover:text-primary"
+                                        size="sm"
+                                        onClick={() => handleEditFromReview(4 + idx)}
+                                        className="h-8 px-2.5 text-xs text-primary hover:text-primary hover:bg-primary/10 gap-1.5"
                                         aria-label={`Ubah email bawahan ${idx + 1}`}
                                     >
                                         <Edit2 className="size-3.5" />
+                                        <span>Ubah</span>
                                     </Button>
                                 </CardContent>
                             </Card>

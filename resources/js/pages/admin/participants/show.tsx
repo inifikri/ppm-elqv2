@@ -18,6 +18,12 @@ import {
 } from "lucide-react";
 import { Head, Link, router } from "@inertiajs/react";
 import { useState } from "react";
+import {
+    resend as resendRater,
+    revoke as revokeRater,
+    store as storeRaters,
+    update as updateRater,
+} from "@/routes/admin/participants/raters";
 import { PageContainer } from "@/components/page-container";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge, activeStatus } from "@/components/status-badge";
@@ -88,6 +94,7 @@ export default function ParticipantShow({
     const [editRaterSendInvitation, setEditRaterSendInvitation] =
         useState(true);
     const [raterSaving, setRaterSaving] = useState(false);
+    const [editRaterError, setEditRaterError] = useState<string | null>(null);
 
     // Add raters state (when empty)
     const [addRatersOpen, setAddRatersOpen] = useState(false);
@@ -100,7 +107,10 @@ export default function ParticipantShow({
     const handleResend = () => {
         if (!resendTarget) return;
         router.post(
-            `/admin/participants/${participant.id}/raters/${resendTarget.id}/resend`,
+            resendRater.url({
+                participant: participant.id,
+                rater: resendTarget,
+            }),
             {},
             {
                 preserveScroll: true,
@@ -112,7 +122,10 @@ export default function ParticipantShow({
     const handleRevoke = () => {
         if (!revokeTarget) return;
         router.post(
-            `/admin/participants/${participant.id}/raters/${revokeTarget.id}/revoke`,
+            revokeRater.url({
+                participant: participant.id,
+                rater: revokeTarget,
+            }),
             { send_invitation: sendNewInvitation },
             {
                 preserveScroll: true,
@@ -126,15 +139,30 @@ export default function ParticipantShow({
         if (!editRaterTarget) return;
 
         setRaterSaving(true);
+        setEditRaterError(null);
         router.put(
-            `/admin/participants/${participant.id}/raters/${editRaterTarget.id}`,
+            updateRater.url({
+                participant: participant.id,
+                rater: editRaterTarget,
+            }),
             {
                 email: editRaterEmail,
                 send_invitation: editRaterSendInvitation,
             },
             {
                 preserveScroll: true,
-                onSuccess: () => setEditRaterTarget(null),
+                onSuccess: () => {
+                    setEditRaterTarget(null);
+                    setEditRaterError(null);
+                },
+                onError: (errors) => {
+                    const msg =
+                        errors.email ||
+                        errors.message ||
+                        Object.values(errors)[0] ||
+                        "Gagal memperbarui data penilai.";
+                    setEditRaterError(String(msg));
+                },
                 onFinish: () => setRaterSaving(false),
             },
         );
@@ -144,7 +172,9 @@ export default function ParticipantShow({
         e.preventDefault();
         setAddingRaters(true);
         router.post(
-            `/admin/participants/${participant.id}/raters`,
+            storeRaters.url({
+                participant: participant.id,
+            }),
             {
                 boss_email: addBossEmail,
                 subordinate_emails: addSubordinates,
@@ -272,36 +302,17 @@ export default function ParticipantShow({
             <div className="space-y-6 pt-2">
                 {/* Trashed Alert Banner */}
                 {participant.is_trashed && (
-                    <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-2.5">
-                            <Trash2 className="size-5 shrink-0" />
-                            <div>
-                                <p className="font-semibold text-foreground">
-                                    Akun Peserta Berada di Data Sampah
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                    Data peserta ini telah dinonaktifkan. Anda dapat memulihkan kembali ke daftar aktif atau menghapusnya secara permanen.
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                icon={RotateCcw}
-                                onClick={() => setRestoreOpen(true)}
-                            >
-                                Pulihkan
-                            </Button>
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                icon={Trash2}
-                                disabled={!participant.can_delete}
-                                onClick={() => setForceDeleteOpen(true)}
-                            >
-                                Hapus Permanen
-                            </Button>
+                    <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive flex items-center gap-3">
+                        <Trash2 className="size-5 shrink-0" />
+                        <div>
+                            <p className="font-semibold text-foreground">
+                                Akun Peserta Berada di Data Sampah
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                Data peserta ini telah dinonaktifkan. Anda dapat
+                                memulihkan kembali ke daftar aktif atau
+                                menghapusnya secara permanen.
+                            </p>
                         </div>
                     </div>
                 )}
@@ -353,132 +364,6 @@ export default function ParticipantShow({
                                     {formatDate(participant.created_at)}
                                 </span>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* KPI Metrics Summary Strip */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                    {/* Self Metric */}
-                    <div className="rounded-xl border border-border/70 bg-card p-4 shadow-xs">
-                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-                            <span className="font-medium">
-                                Penilaian Mandiri
-                            </span>
-                            {selfSubmitted ? (
-                                <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
-                            ) : (
-                                <Clock className="size-4 text-amber-500" />
-                            )}
-                        </div>
-                        <div className="flex items-baseline justify-between">
-                            <span className="text-xl font-bold text-foreground">
-                                {selfSubmitted ? "1 / 1" : "0 / 1"}
-                            </span>
-                            <span
-                                className={cn(
-                                    "text-xs font-medium",
-                                    selfSubmitted
-                                        ? "text-emerald-600 dark:text-emerald-400"
-                                        : "text-amber-600 dark:text-amber-400",
-                                )}
-                            >
-                                {selfSubmitted ? "Selesai" : "Belum Selesai"}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Boss Metric */}
-                    <div className="rounded-xl border border-border/70 bg-card p-4 shadow-xs">
-                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-                            <span className="font-medium">Atasan Langsung</span>
-                            {bossSubmitted ? (
-                                <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
-                            ) : (
-                                <Clock className="size-4 text-amber-500" />
-                            )}
-                        </div>
-                        <div className="flex items-baseline justify-between">
-                            <span className="text-xl font-bold text-foreground">
-                                {bossSubmitted ? "1 / 1" : "0 / 1"}
-                            </span>
-                            <span
-                                className={cn(
-                                    "text-xs font-medium",
-                                    bossSubmitted
-                                        ? "text-emerald-600 dark:text-emerald-400"
-                                        : "text-amber-600 dark:text-amber-400",
-                                )}
-                            >
-                                {bossSubmitted ? "Selesai" : "Belum Selesai"}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Subordinate Metric */}
-                    <div className="rounded-xl border border-border/70 bg-card p-4 shadow-xs">
-                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-                            <span className="font-medium">
-                                Bawahan Langsung
-                            </span>
-                            {subSubmittedCount === subordinateRaters.length &&
-                            subordinateRaters.length > 0 ? (
-                                <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
-                            ) : (
-                                <Clock className="size-4 text-amber-500" />
-                            )}
-                        </div>
-                        <div className="flex items-baseline justify-between">
-                            <span className="text-xl font-bold text-foreground">
-                                {subSubmittedCount} /{" "}
-                                {subordinateRaters.length || 3}
-                            </span>
-                            <span
-                                className={cn(
-                                    "text-xs font-medium",
-                                    subSubmittedCount ===
-                                        subordinateRaters.length &&
-                                        subordinateRaters.length > 0
-                                        ? "text-emerald-600 dark:text-emerald-400"
-                                        : "text-amber-600 dark:text-amber-400",
-                                )}
-                            >
-                                {subSubmittedCount ===
-                                    subordinateRaters.length &&
-                                subordinateRaters.length > 0
-                                    ? "Lengkap"
-                                    : `${(subordinateRaters.length || 3) - subSubmittedCount} Tersisa`}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Total Overall Progress Metric */}
-                    <div className="rounded-xl border border-border/70 bg-card p-4 shadow-xs">
-                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-                            <span className="font-medium">Total Evaluator</span>
-                            <span className="font-semibold text-primary">
-                                {progressPercent}%
-                            </span>
-                        </div>
-                        <div className="flex items-baseline justify-between mb-2">
-                            <span className="text-xl font-bold text-foreground">
-                                {submittedCount} / {totalRaters || 5}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                                Terkumpul
-                            </span>
-                        </div>
-                        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                            <div
-                                className={cn(
-                                    "h-full transition-all duration-300 rounded-full",
-                                    submittedCount === totalRaters &&
-                                        totalRaters > 0
-                                        ? "bg-emerald-600"
-                                        : "bg-primary",
-                                )}
-                                style={{ width: `${progressPercent}%` }}
-                            />
                         </div>
                     </div>
                 </div>
@@ -639,6 +524,7 @@ export default function ParticipantShow({
                                                         setEditRaterSendInvitation(
                                                             !rater.is_submitted,
                                                         );
+                                                        setEditRaterError(null);
                                                     }}
                                                 >
                                                     <Pencil className="size-3.5" />
@@ -805,7 +691,12 @@ export default function ParticipantShow({
             {/* Dialog Edit Rater */}
             <Dialog
                 open={editRaterTarget !== null}
-                onOpenChange={(open) => !open && setEditRaterTarget(null)}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setEditRaterTarget(null);
+                        setEditRaterError(null);
+                    }
+                }}
             >
                 <DialogContent className="w-[calc(100%-2.5rem)] max-w-md p-6 sm:p-7 rounded-2xl">
                     <DialogHeader>
@@ -827,12 +718,22 @@ export default function ParticipantShow({
                                 id="rater_email"
                                 type="email"
                                 value={editRaterEmail}
-                                onChange={(e) =>
-                                    setEditRaterEmail(e.target.value)
-                                }
+                                onChange={(e) => {
+                                    setEditRaterEmail(e.target.value);
+                                    if (editRaterError) setEditRaterError(null);
+                                }}
                                 placeholder="penilai@perusahaan.com"
+                                className={cn(
+                                    editRaterError &&
+                                        "border-destructive focus-visible:ring-destructive",
+                                )}
                                 required
                             />
+                            {editRaterError && (
+                                <p className="text-xs text-destructive font-medium">
+                                    {editRaterError}
+                                </p>
+                            )}
                         </div>
 
                         {!editRaterTarget?.is_submitted && (
@@ -857,7 +758,10 @@ export default function ParticipantShow({
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => setEditRaterTarget(null)}
+                                onClick={() => {
+                                    setEditRaterTarget(null);
+                                    setEditRaterError(null);
+                                }}
                             >
                                 Batal
                             </Button>
@@ -938,15 +842,17 @@ export default function ParticipantShow({
             </Dialog>
 
             {/* Dialog Pulihkan Peserta */}
-            <AlertDialog
-                open={restoreOpen}
-                onOpenChange={setRestoreOpen}
-            >
+            <AlertDialog open={restoreOpen} onOpenChange={setRestoreOpen}>
                 <AlertDialogContent className="w-[calc(100%-2.5rem)] max-w-md p-6 sm:p-7 rounded-2xl">
                     <AlertDialogHeader>
                         <AlertDialogTitle>Pulihkan peserta?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Akun peserta <strong className="text-foreground">{participant.name}</strong> akan dipulihkan dari data sampah ke daftar peserta aktif.
+                            Akun peserta{" "}
+                            <strong className="text-foreground">
+                                {participant.name}
+                            </strong>{" "}
+                            akan dipulihkan dari data sampah ke daftar peserta
+                            aktif.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="mt-4">
@@ -983,23 +889,44 @@ export default function ParticipantShow({
                         </AlertDialogTitle>
                         <AlertDialogDescription className="space-y-3 pt-2">
                             <p className="font-semibold text-foreground">
-                                Anda akan menghapus akun <span className="underline">{participant.name} ({participant.email})</span> secara permanen dari basis data.
+                                Anda akan menghapus akun{" "}
+                                <span className="underline">
+                                    {participant.name} ({participant.email})
+                                </span>{" "}
+                                secara permanen dari basis data.
                             </p>
                             <div className="rounded-control bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive space-y-1.5">
-                                <p className="font-semibold">Perhatian: Data berikut akan ikut terhapus permanen:</p>
+                                <p className="font-semibold">
+                                    Perhatian: Data berikut akan ikut terhapus
+                                    permanen:
+                                </p>
                                 <ul className="list-disc list-inside space-y-0.5">
-                                    <li>Kredensial login & data profil pengguna</li>
-                                    <li>Profil peserta (informasi perusahaan & jabatan)</li>
-                                    <li>Seluruh data penilai (atasan & bawahan) terkait</li>
-                                    <li>Seluruh jawaban kuesioner assessment terkait</li>
+                                    <li>
+                                        Kredensial login & data profil pengguna
+                                    </li>
+                                    <li>
+                                        Profil peserta (informasi perusahaan &
+                                        jabatan)
+                                    </li>
+                                    <li>
+                                        Seluruh data penilai (atasan & bawahan)
+                                        terkait
+                                    </li>
+                                    <li>
+                                        Seluruh jawaban kuesioner assessment
+                                        terkait
+                                    </li>
                                     <li>Riwayat pencatatan log email</li>
                                 </ul>
                             </div>
                             <p className="text-[11px] text-muted-foreground">
-                                * Catatan audit log aktivitas tetap disimpan permanen untuk keperluan rekam jejak kepatuhan sistem.
+                                * Catatan audit log aktivitas tetap disimpan
+                                permanen untuk keperluan rekam jejak kepatuhan
+                                sistem.
                             </p>
                             <p className="text-xs text-muted-foreground font-semibold">
-                                PERINGATAN: Tindakan ini TIDAK DAPAT DIBATALKAN atau dipulihkan kembali.
+                                PERINGATAN: Tindakan ini TIDAK DAPAT DIBATALKAN
+                                atau dipulihkan kembali.
                             </p>
                         </AlertDialogDescription>
                     </AlertDialogHeader>

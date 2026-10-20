@@ -16,6 +16,7 @@ use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Activitylog\Models\Activity;
 
@@ -105,8 +106,32 @@ it('pdf: mengembalikan response application/pdf dan tidak menyimpan file di disk
         ->get("/admin/participants/{$this->participant->id}/result/pdf");
 
     $response->assertOk();
+    $expectedSlug = Str::slug($this->participant->name);
+    $expectedFilename = "ELQ-Result_{$expectedSlug}_".now()->format('Ymd').'.pdf';
+
     expect($response->headers->get('content-type'))->toContain('application/pdf')
-        ->and($response->headers->get('content-disposition'))->toContain("hasil-assessment-{$this->participant->name}.pdf");
+        ->and($response->headers->get('content-disposition'))->toContain($expectedFilename)
+        ->and($response->getContent())->toStartWith('%PDF-');
+
+    // Verifikasi activity_log download tercatat
+    $activity = Activity::where('log_name', 'results')
+        ->where('description', 'Download PDF hasil assessment')
+        ->where('subject_id', $this->participant->id)
+        ->latest('id')
+        ->first();
+
+    expect($activity)->not->toBeNull()
+        ->and($activity->causer_id)->toBe($this->admin->id);
+});
+
+it('pdf: redirect back dengan pesan error jika peserta belum memiliki data penilaian', function () {
+    $emptyParticipant = User::factory()->participant()->create();
+
+    $response = $this->actingAs($this->admin)
+        ->get("/admin/participants/{$emptyParticipant->id}/result/pdf");
+
+    $response->assertRedirect();
+    $response->assertSessionHas('error');
 });
 
 it('sendPdf: job ter-queue, hanya ke email akun peserta, email_logs terisi, activity log tidak memuat nilai jawaban', function () {

@@ -6,44 +6,45 @@ use App\Enums\EmailLogStatus;
 use App\Mail\AssessmentResultMail;
 use App\Models\EmailLog;
 use App\Models\User;
-use App\Services\Scoring\ResultChartRenderer;
-use App\Services\Scoring\ScoreCalculator;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\Reports\AssessmentPdfGenerator;
+use App\Services\Reports\AssessmentReportBuilder;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class SendAssessmentResultPdfJob implements ShouldQueue
 {
     use Queueable;
+
+    public int $tries = 3;
+
+    public int $backoff = 60;
 
     public function __construct(
         public User $participant,
         public int $emailLogId
     ) {}
 
-    public function handle(ScoreCalculator $calculator, ResultChartRenderer $chartRenderer): void
-    {
+    public function handle(
+        AssessmentReportBuilder $reportBuilder,
+        AssessmentPdfGenerator $pdfGenerator,
+    ): void {
         $emailLog = EmailLog::find($this->emailLogId);
 
         try {
-            // Hitung hasil assessment on-demand
-            $data = $calculator->calculate($this->participant);
+            // Bangun data laporan lengkap on-demand (tanpa disimpan di server)
+            $reportData = $reportBuilder->build($this->participant);
 
-            // Render grafik SVG server-side untuk PDF
-            $radarSvg = $chartRenderer->renderRadarSvg($data['dimensions'] ?? []);
+            // Buat binary PDF di memori worker
+            $pdfBinary = $pdfGenerator->generateBinary($reportData);
 
-            // Buat PDF di memori tanpa disimpan ke disk
-            $pdf = Pdf::loadView('pdf.assessment-result', [
-                'result' => $data,
-                'radarSvg' => $radarSvg,
-            ]);
+            $slug = Str::slug($this->participant->name) ?: 'peserta';
+            $filename = "ELQ-Result_{$slug}_".now()->format('Ymd').'.pdf';
 
-            $pdfBinary = $pdf->output();
-
-            // Kirim email dengan lampiran PDF
+            // Kirim email dengan lampiran PDF ke email akun peserta
             Mail::to($this->participant->email)
-                ->send(new AssessmentResultMail($this->participant, $pdfBinary));
+                ->send(new AssessmentResultMail($this->participant, $pdfBinary, $filename));
 
             // Perbarui log email menjadi Sent (tanpa menyimpan lampiran/isi jawaban)
             $emailLog?->update([

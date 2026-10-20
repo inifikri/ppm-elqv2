@@ -25,6 +25,8 @@ export type Auth = {
         view_results?: boolean;
         export_results?: boolean;
         share_results?: boolean;
+        view_activity_log?: boolean;
+        manage_email_logs?: boolean;
     };
 };
 

@@ -152,6 +152,7 @@ export default function AssessmentRun({
             return;
         }
 
+        setConfirmSubmitOpen(false);
         setIsSubmitting(true);
         router.post(
             '/participant/assessment/submit',
@@ -170,9 +171,23 @@ export default function AssessmentRun({
         );
     };
 
+    if (isSubmitting) {
+        return (
+            <>
+                <Head title="Menyimpan Self-Assessment - ELQ 360°" />
+                <QuestionsLoader
+                    mode="submitting-assessment"
+                    totalQuestions={totalQuestions}
+                />
+            </>
+        );
+    }
+
     if (!currentQuestion) {
         return (
             <QuestionsLoader
+                mode="loading-questions"
+                totalQuestions={totalQuestions}
                 isResuming={Object.keys(initialAnswers || {}).length > 0}
                 onRetry={() => window.location.reload()}
             />

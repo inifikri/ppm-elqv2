@@ -48,10 +48,6 @@ export default function ParticipantDashboard({
             <div className="space-y-6 pb-12 animate-in fade-in-50 duration-300">
                 {/* Greeting & Header */}
                 <div className="space-y-1">
-                    <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                        <Sparkles className="size-3.5" />
-                        <span>Tahap Penutup &amp; Pemantauan</span>
-                    </div>
                     <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                         Terima Kasih, {participant.name}!
                     </h1>
@@ -86,11 +82,11 @@ export default function ParticipantDashboard({
                                 Asesmen Mandiri Anda Telah Berhasil Diserahkan
                             </h2>
                             <p className="text-xs text-emerald-800 dark:text-emerald-300/90 leading-relaxed">
-                                Anda telah menyelesaikan{' '}
+                                Anda telah menyelesaikan{" "}
                                 {self_assessment.total_questions
                                     ? `${self_assessment.total_questions} butir pertanyaan`
-                                    : 'seluruh butir pertanyaan'}{' '}
-                                evaluasi diri pada{' '}
+                                    : "seluruh butir pertanyaan"}{" "}
+                                evaluasi diri pada{" "}
                                 <strong className="font-semibold text-foreground">
                                     {formatDate(self_assessment.submitted_at)}
                                 </strong>

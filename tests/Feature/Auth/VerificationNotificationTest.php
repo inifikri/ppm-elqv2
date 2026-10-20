@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\EmailLogStatus;
+use App\Enums\EmailLogType;
 use App\Models\User;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Notification;
@@ -31,4 +33,18 @@ test('does not send verification notification if email is verified', function ()
         ->assertRedirect(route('dashboard', absolute: false));
 
     Notification::assertNothingSent();
+});
+
+test('sends verification notification logs sent email', function () {
+    Notification::fake();
+
+    $user = User::factory()->unverified()->create();
+
+    $this->actingAs($user)
+        ->post(route('verification.send'))
+        ->assertRedirect(route('home'));
+
+    $log = $user->emailLogs()->where('type', EmailLogType::EmailVerification)->first();
+    expect($log)->not->toBeNull()
+        ->and($log->status)->toBe(EmailLogStatus::Sent);
 });

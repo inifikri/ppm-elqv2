@@ -1,8 +1,10 @@
 import {
     Building2,
     CircleQuestionMark,
+    History,
     Layers,
     LayoutGrid,
+    Mail,
     Network,
     Users,
 } from "lucide-react";
@@ -18,7 +20,9 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { dashboard } from "@/routes";
+import { index as activityLogsIndex } from "@/routes/admin/activity-logs";
 import { index as companiesIndex } from "@/routes/admin/companies";
+import { index as emailLogsIndex } from "@/routes/admin/email-logs";
 import { index as domainsIndex } from "@/routes/admin/domains";
 import { index as questionsIndex } from "@/routes/admin/questions";
 import { index as subDomainsIndex } from "@/routes/admin/sub-domains";
@@ -76,6 +80,33 @@ export function AppSidebar() {
         });
     }
 
+    if (can.manage_company ?? can.manage_users) {
+        masterItems.push({
+            title: "Perusahaan",
+            href: companiesIndex(),
+            icon: Building2,
+            exact: false,
+        });
+    }
+
+    if (can.view_activity_log) {
+        logItems.push({
+            title: "Activity Log",
+            href: activityLogsIndex(),
+            icon: History,
+            exact: false,
+        });
+    }
+
+    if (can.manage_email_logs) {
+        logItems.push({
+            title: "Email Log",
+            href: emailLogsIndex(),
+            icon: Mail,
+            exact: false,
+        });
+    }
+
     const groups: NavGroup[] = [
         {
             label: "Menu",
@@ -99,16 +130,10 @@ export function AppSidebar() {
                           icon: Users,
                           exact: false,
                       },
-                      {
-                          title: "Perusahaan",
-                          href: companiesIndex(),
-                          icon: Building2,
-                          exact: false,
-                      },
                   ]
                 : [],
         },
-        { label: "Settings", items: logItems },
+        { label: "Sistem", items: logItems },
     ].filter((g) => g.items.length > 0);
 
     return (

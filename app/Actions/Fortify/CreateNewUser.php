@@ -4,6 +4,7 @@ namespace App\Actions\Fortify;
 
 use App\Concerns\PasswordValidationRules;
 use App\Enums\UserRole;
+use App\Http\Middleware\RejectHtmlTags;
 use App\Models\Company;
 use App\Models\ParticipantProfile;
 use App\Models\User;
@@ -36,13 +37,17 @@ class CreateNewUser implements CreatesNewUsers
 
         $input['email'] = Str::lower(trim((string) ($input['email'] ?? '')));
 
+        $noHtml = fn (string $attr, mixed $value, \Closure $fail) => is_string($value)
+            && preg_match(RejectHtmlTags::PATTERN, $value) === 1
+            && $fail(RejectHtmlTags::MESSAGE);
+
         Validator::make($input, [
-            'name' => ['required', 'string', 'max:255'],
-            'company' => ['required', 'string', 'min:2', 'max:255'],
-            'position' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'string', fn ($attr, $value, $fail) => ($status = $this->emailChecker->status($value)) === EmailDomainChecker::OK
+            'name' => ['required', 'string', 'max:255', $noHtml],
+            'company' => ['required', 'string', 'min:2', 'max:255', $noHtml],
+            'position' => ['required', 'string', 'max:100', $noHtml],
+            'email' => ['required', 'string', $noHtml, fn ($attr, $value, $fail) => ($status = $this->emailChecker->status($value)) === EmailDomainChecker::OK
                 || $fail($this->emailChecker->message($status))],
-            'password' => $this->registerPasswordRules(),
+            'password' => [...$this->registerPasswordRules(), $noHtml],
         ])->validate();
 
         if ($error = $this->captcha->verify($input['captcha_answer'] ?? null, $input['website'] ?? null)) {

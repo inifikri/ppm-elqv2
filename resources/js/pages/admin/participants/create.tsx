@@ -13,6 +13,7 @@ import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { BackButton } from '@/components/back-button';
 import { PasswordStrength } from '@/components/auth/password-strength';
+import { CompanyCombobox } from '@/components/company-combobox';
 import { FormCard } from '@/components/form-card';
 import { FormField } from '@/components/form-field';
 import { FormFooter } from '@/components/form-footer';
@@ -22,6 +23,10 @@ import { PageHeader } from '@/components/page-header';
 import { UnsavedChangesGuard } from '@/components/unsaved-changes-guard';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import {
+    index as participantsIndex,
+    store as storeParticipant,
+} from '@/routes/admin/participants';
 
 export default function CreateParticipant({
     companies,
@@ -62,7 +67,7 @@ export default function CreateParticipant({
         setErrors({});
 
         router.post(
-            '/admin/participants',
+            storeParticipant.url(),
             {
                 name,
                 email,
@@ -87,7 +92,7 @@ export default function CreateParticipant({
     return (
         <PageContainer narrow>
             <Head title="Tambah Peserta" />
-            <BackButton href="/admin/participants" />
+            <BackButton href={participantsIndex.url()} />
             <PageHeader
                 title="Tambah Peserta"
                 description="Pendaftaran akun peserta baru dan 4 penilai (1 atasan & 3 bawahan)"
@@ -160,30 +165,18 @@ export default function CreateParticipant({
                         />
                     </FormField>
 
-                    <FormField
+                    <CompanyCombobox
                         id="company_name"
-                        label="Perusahaan"
+                        value={companyName}
+                        onChange={(val) => {
+                            setCompanyName(val);
+                            setIsDirty(true);
+                        }}
                         error={errors.company_name}
+                        initialSuggestions={companies}
+                        placeholder="Ketik atau pilih perusahaan"
                         required
-                    >
-                        <Input
-                            id="company_name"
-                            name="company_name"
-                            list="company-suggestions"
-                            value={companyName}
-                            onChange={(e) => {
-                                setCompanyName(e.target.value);
-                                setIsDirty(true);
-                            }}
-                            required
-                            placeholder="Ketik atau pilih perusahaan"
-                        />
-                        <datalist id="company-suggestions">
-                            {companies.map((c) => (
-                                <option key={c} value={c} />
-                            ))}
-                        </datalist>
-                    </FormField>
+                    />
 
                     <FormField
                         id="position"

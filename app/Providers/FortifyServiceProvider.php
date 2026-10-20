@@ -7,8 +7,12 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Http\Responses\LoginResponse;
 use App\Http\Responses\RegisterResponse;
+use App\Models\Company;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -39,6 +43,7 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+        $this->configureCustomMailTemplates();
     }
 
     /**
@@ -76,7 +81,9 @@ class FortifyServiceProvider extends ServiceProvider
             'status' => $request->session()->get('status'),
         ]));
 
-        Fortify::registerView(fn () => Inertia::render('auth/register'));
+        Fortify::registerView(fn () => Inertia::render('auth/register', [
+            'companies' => Company::orderBy('name')->pluck('name')->all(),
+        ]));
 
         Fortify::confirmPasswordView(fn () => Inertia::render('auth/confirm-password'));
     }
@@ -89,5 +96,35 @@ class FortifyServiceProvider extends ServiceProvider
 
         // Throttle global per-IP (credential stuffing lintas email). Counter per email+IP ada di LoginAttemptLimiter.
         RateLimiter::for('login', fn (Request $request) => Limit::perMinute(20)->by((string) $request->ip()));
+    }
+
+    /**
+     * Configure professional, modern, and minimalist custom mail templates.
+     */
+    private function configureCustomMailTemplates(): void
+    {
+        ResetPassword::toMailUsing(function ($notifiable, string $token) {
+            $url = url(route('password.reset', [
+                'token' => $token,
+                'email' => $notifiable->getEmailForPasswordReset(),
+            ], false));
+
+            return (new MailMessage)
+                ->subject('Permintaan Atur Ulang Password - ELQ 360°')
+                ->view('mail.reset-password', [
+                    'user' => $notifiable,
+                    'resetUrl' => $url,
+                    'count' => config('auth.passwords.'.config('auth.defaults.passwords').'.expire', 60),
+                ]);
+        });
+
+        VerifyEmail::toMailUsing(function ($notifiable, string $url) {
+            return (new MailMessage)
+                ->subject('Verifikasi Alamat Email - ELQ 360°')
+                ->view('mail.verify-email', [
+                    'user' => $notifiable,
+                    'verificationUrl' => $url,
+                ]);
+        });
     }
 }

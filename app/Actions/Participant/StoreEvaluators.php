@@ -35,21 +35,40 @@ class StoreEvaluators
 
         // Validasi: tidak boleh email peserta sendiri
         $participantEmail = strtolower(trim($participant->email));
-        if ($bossEmail === $participantEmail || in_array($participantEmail, $subordinateEmails, true)) {
+        if ($bossEmail === $participantEmail) {
             throw ValidationException::withMessages([
-                'email' => 'Email penilai tidak boleh menggunakan alamat email Anda sendiri.',
+                'boss_email' => 'Email penilai tidak boleh menggunakan alamat email Anda sendiri.',
             ]);
+        }
+
+        foreach ($subordinateEmails as $index => $subEmail) {
+            if ($subEmail === $participantEmail) {
+                throw ValidationException::withMessages([
+                    "subordinate_emails.{$index}" => 'Email penilai tidak boleh menggunakan alamat email Anda sendiri.',
+                ]);
+            }
         }
 
         // Validasi: tidak boleh duplikat antar penilai
-        $allEmails = [$bossEmail, ...$subordinateEmails];
-        if (count($allEmails) !== count(array_unique($allEmails))) {
-            throw ValidationException::withMessages([
-                'email' => 'Email atasan dan bawahan tidak boleh ada yang sama (duplikat).',
-            ]);
+        foreach ($subordinateEmails as $index => $subEmail) {
+            if ($subEmail === $bossEmail) {
+                throw ValidationException::withMessages([
+                    "subordinate_emails.{$index}" => 'Email atasan dan bawahan tidak boleh ada yang sama (duplikat).',
+                ]);
+            }
         }
 
-        return DB::transaction(function () use ($participant, $bossEmail, $subordinateEmails) {
+        $seenSubEmails = [];
+        foreach ($subordinateEmails as $index => $subEmail) {
+            if (in_array($subEmail, $seenSubEmails, true)) {
+                throw ValidationException::withMessages([
+                    "subordinate_emails.{$index}" => 'Email atasan dan bawahan tidak boleh ada yang sama (duplikat).',
+                ]);
+            }
+            $seenSubEmails[] = $subEmail;
+        }
+
+        [$raters, $dispatches] = DB::transaction(function () use ($participant, $bossEmail, $subordinateEmails): array {
             // 1. Buat rater self
             $selfRater = Rater::create([
                 'participant_id' => $participant->id,
@@ -74,8 +93,9 @@ class StoreEvaluators
                 ]);
             }
 
-            // 4. Catat email_logs dan dispatch jobs antrean undangan
+            // 4. Catat email_logs di dalam transaksi agar tersimpan permanen sebelum pengiriman SMTP
             $invitedRaters = [$bossRater, ...$createdSubordinates];
+            $pendingDispatches = [];
             foreach ($invitedRaters as $rater) {
                 $emailLog = EmailLog::create([
                     'type' => EmailLogType::RaterInvitation,
@@ -86,7 +106,10 @@ class StoreEvaluators
                     'queued_at' => now(),
                 ]);
 
-                SendAssessmentInvitation::dispatch($rater, $emailLog->id);
+                $pendingDispatches[] = [
+                    'rater' => $rater,
+                    'email_log_id' => $emailLog->id,
+                ];
             }
 
             // Catat activity log audit (tanpa isi sensitif)
@@ -95,7 +118,18 @@ class StoreEvaluators
                 ->performedOn($participant)
                 ->log('Menyimpan daftar penilai (1 atasan, 3 bawahan)');
 
-            return [$selfRater, $bossRater, ...$createdSubordinates];
+            return [
+                [$selfRater, $bossRater, ...$createdSubordinates],
+                $pendingDispatches,
+            ];
         });
+
+        // 5. Dispatch email SETELAH transaksi DB berhasil di-commit agar tidak rollback bila SMTP lambat
+        foreach ($dispatches as $index => $item) {
+            SendAssessmentInvitation::dispatch($item['rater'], $item['email_log_id'])
+                ->delay(now()->addSeconds($index * 2));
+        }
+
+        return $raters;
     }
 }

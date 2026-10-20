@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\Question;
 use App\Models\Rater;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -35,6 +36,7 @@ class AssessmentInvitationMail extends Mailable
                 'participant' => $this->rater->participant,
                 'roleLabel' => $this->rater->role?->label() ?? 'Penilai',
                 'evaluationUrl' => url("/rater/{$this->rater->ulid}"),
+                'questionCount' => Question::count(),
             ],
         );
     }

@@ -62,6 +62,8 @@ class HandleInertiaRequests extends Middleware
                     'view_results' => (bool) $request->user()?->can(PermissionName::ResultsView->value),
                     'export_results' => (bool) $request->user()?->can(PermissionName::ResultsExport->value),
                     'share_results' => (bool) $request->user()?->can(PermissionName::ResultsShare->value),
+                    'view_activity_log' => (bool) $request->user()?->can(PermissionName::ActivityLogView->value),
+                    'manage_email_logs' => (bool) $request->user()?->can(PermissionName::EmailLogManage->value),
                 ],
             ],
             'notifications' => $request->user()?->can(PermissionName::ParticipantsView->value)

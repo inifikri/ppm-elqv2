@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\DimensionController;
+use App\Http\Controllers\Admin\EmailLogController;
+use App\Http\Controllers\Admin\EmailTemplatePreviewController;
 use App\Http\Controllers\Admin\ParticipantBulkController;
 use App\Http\Controllers\Admin\ParticipantController;
 use App\Http\Controllers\Admin\ParticipantExportController;
@@ -130,4 +133,15 @@ Route::middleware(['auth', 'verified'])
         Route::resource('questions', QuestionController::class)
             ->except(['show'])
             ->middleware('can:questions.manage');
+
+        Route::get('activity-logs', [ActivityLogController::class, 'index'])
+            ->name('activity-logs.index')
+            ->middleware('can:activity-log.view');
+
+        Route::middleware('can:email-log.manage')->group(function () {
+            Route::get('email-logs', [EmailLogController::class, 'index'])->name('email-logs.index');
+            Route::post('email-logs/{emailLog}/retry', [EmailLogController::class, 'retry'])->name('email-logs.retry');
+            Route::post('email-logs/bulk-retry', [EmailLogController::class, 'bulkRetry'])->name('email-logs.bulk-retry');
+            Route::get('email-templates/preview', EmailTemplatePreviewController::class)->name('email-templates.preview');
+        });
     });

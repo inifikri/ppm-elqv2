@@ -5,9 +5,8 @@ namespace App\Actions\Fortify;
 use Illuminate\Contracts\Session\Session;
 
 /**
- * Captcha penjumlahan sederhana berbasis session (tanpa dependency/layanan eksternal),
+ * Proof-of-Work (SHA-256) berbasis session (tanpa dependency/layanan eksternal),
  * plus honeypot dan batas waktu minimum. Sekali pakai: selalu dibuang saat diverifikasi.
- * ponytail: tidak tahan bot yang menghitung; ganti ke Turnstile/reCAPTCHA bila ada spam nyata.
  */
 class RegistrationCaptcha
 {
@@ -15,14 +14,20 @@ class RegistrationCaptcha
 
     public function __construct(private Session $session) {}
 
-    /** @return array{question: string} */
+    /** @return array{salt: string, challenge: string, max: int} */
     public function issue(): array
     {
-        $a = random_int(2, 9);
-        $b = random_int(2, 9);
-        $this->session->put(self::KEY, ['answer' => $a + $b, 'at' => time()]);
+        $max = max(1, (int) config('elq.register.pow_max', 15000));
+        $salt = bin2hex(random_bytes(12));
+        $answer = random_int(0, $max);
 
-        return ['question' => "$a + $b = ?"];
+        $this->session->put(self::KEY, ['answer' => $answer, 'at' => time()]);
+
+        return [
+            'salt' => $salt,
+            'challenge' => hash('sha256', "$salt:$answer"),
+            'max' => $max,
+        ];
     }
 
     /** Kembalikan kunci pesan lang `register.captcha.*` bila gagal, null bila lolos. */

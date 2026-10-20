@@ -168,7 +168,7 @@ class ParticipantController extends Controller
 
         $validated = $request->validated();
 
-        $participant = DB::transaction(function () use ($validated, $request) {
+        [$participant, $dispatches] = DB::transaction(function () use ($validated, $request): array {
             $user = new User([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -212,6 +212,7 @@ class ParticipantController extends Controller
                 ]);
             }
 
+            $pendingDispatches = [];
             foreach ([$bossRater, ...$subRaters] as $rater) {
                 $emailLog = EmailLog::create([
                     'type' => EmailLogType::RaterInvitation,
@@ -222,7 +223,10 @@ class ParticipantController extends Controller
                     'queued_at' => now(),
                 ]);
 
-                SendAssessmentInvitation::dispatch($rater, $emailLog->id);
+                $pendingDispatches[] = [
+                    'rater' => $rater,
+                    'email_log_id' => $emailLog->id,
+                ];
             }
 
             activity('participants')
@@ -230,8 +234,13 @@ class ParticipantController extends Controller
                 ->causedBy($request->user())
                 ->log("Menambahkan peserta baru {$user->name} dengan 1 penilai atasan dan 3 bawahan");
 
-            return $user;
+            return [$user, $pendingDispatches];
         });
+
+        foreach ($dispatches as $index => $item) {
+            SendAssessmentInvitation::dispatch($item['rater'], $item['email_log_id'])
+                ->delay(now()->addSeconds($index * 2));
+        }
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -372,7 +381,9 @@ class ParticipantController extends Controller
 
         $validated = $request->validated();
 
-        DB::transaction(function () use ($validated, $participant, $request) {
+        $dispatches = DB::transaction(function () use ($validated, $participant, $request): array {
+            $pendingDispatches = [];
+
             $participant->update([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -421,7 +432,10 @@ class ParticipantController extends Controller
                     'status' => EmailLogStatus::Queued,
                     'queued_at' => now(),
                 ]);
-                SendAssessmentInvitation::dispatch($bossRater, $emailLog->id);
+                $pendingDispatches[] = [
+                    'rater' => $bossRater,
+                    'email_log_id' => $emailLog->id,
+                ];
             }
 
             // Subordinate raters
@@ -451,7 +465,10 @@ class ParticipantController extends Controller
                         'status' => EmailLogStatus::Queued,
                         'queued_at' => now(),
                     ]);
-                    SendAssessmentInvitation::dispatch($newSub, $emailLog->id);
+                    $pendingDispatches[] = [
+                        'rater' => $newSub,
+                        'email_log_id' => $emailLog->id,
+                    ];
                 }
             }
 
@@ -459,7 +476,14 @@ class ParticipantController extends Controller
                 ->performedOn($participant)
                 ->causedBy($request->user())
                 ->log("Memperbarui data peserta {$participant->name}");
+
+            return $pendingDispatches;
         });
+
+        foreach ($dispatches as $index => $item) {
+            SendAssessmentInvitation::dispatch($item['rater'], $item['email_log_id'])
+                ->delay(now()->addSeconds($index * 2));
+        }
 
         Inertia::flash('toast', [
             'type' => 'success',

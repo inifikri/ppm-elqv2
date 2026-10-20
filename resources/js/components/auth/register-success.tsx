@@ -1,4 +1,4 @@
-import { Check, MailCheck, Pencil, Send, X } from 'lucide-react';
+import { AlertTriangle, Check, MailCheck, Pencil, Send, X } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
@@ -12,14 +12,19 @@ import { send } from '@/routes/verification';
 const COOLDOWN = 60;
 const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function RegisterSuccess({ email }: { email: string }) {
+interface RegisterSuccessProps {
+    email: string;
+    mailSent?: boolean;
+}
+
+export function RegisterSuccess({ email, mailSent = true }: RegisterSuccessProps) {
     const [currentEmail, setCurrentEmail] = useState(email);
     const [isEditing, setIsEditing] = useState(false);
     const [newEmail, setNewEmail] = useState(email);
     const [saving, setSaving] = useState(false);
     const [editError, setEditError] = useState('');
 
-    const [seconds, setSeconds] = useState(COOLDOWN);
+    const [seconds, setSeconds] = useState(mailSent ? COOLDOWN : 0);
     const [busy, setBusy] = useState(false);
     const [sent, setSent] = useState(false);
     const [error, setError] = useState('');
@@ -208,6 +213,26 @@ export function RegisterSuccess({ email }: { email: string }) {
                     </form>
                 )}
             </div>
+
+            {!mailSent && !sent && (
+                <div
+                    role="alert"
+                    className="flex items-start gap-3 rounded-control border border-amber-300 bg-amber-50 p-3.5 text-left text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                >
+                    <AlertTriangle
+                        className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400"
+                        aria-hidden="true"
+                    />
+                    <div className="space-y-1">
+                        <p className="font-semibold text-amber-950 dark:text-amber-100">
+                            Pendaftaran Akun Berhasil
+                        </p>
+                        <p className="text-xs leading-relaxed text-amber-900 dark:text-amber-300">
+                            Akun Anda telah tersimpan di sistem. Namun, pengiriman email verifikasi tertunda karena server email sedang mengalami kendala. Silakan gunakan tombol <strong>Kirim ulang email</strong> di bawah beberapa saat lagi.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {sent && (
                 <div
