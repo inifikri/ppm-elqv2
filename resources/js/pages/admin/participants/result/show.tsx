@@ -34,14 +34,19 @@ import { DimensionRadarChart } from "@/components/assessment/charts/dimension-ra
 import { RoleComparisonBarChart } from "@/components/assessment/charts/role-comparison-bar-chart";
 import { SubDimensionBarChart } from "@/components/assessment/charts/sub-dimension-bar-chart";
 import { DetailedAnswersTable } from "@/components/assessment/detailed-answers-table";
-import { SendPdfDialog } from "@/components/assessment/send-pdf-dialog";
+import {
+    SendPdfDialog,
+    type AvailableRecipientRater,
+} from "@/components/assessment/send-pdf-dialog";
 import type { AssessmentResult } from "@/types/assessment";
 import type { Auth } from "@/types/auth";
 
 export default function AssessmentResultShow({
     result,
+    raters = [],
 }: {
     result: AssessmentResult;
+    raters?: AvailableRecipientRater[];
 }) {
     const { auth } = usePage<{ auth: Auth }>().props;
     const [sendModalOpen, setSendModalOpen] = useState(false);
@@ -147,7 +152,7 @@ export default function AssessmentResultShow({
                                         <CardDescription className="text-xs">
                                             Perbandingan persepsi kepemimpinan
                                             antara Diri Sendiri, Atasan,
-                                            Bawahan, dan Rata-rata (Average).
+                                            Bawahan/Rekan, dan Rata-rata (Average).
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
@@ -203,7 +208,7 @@ export default function AssessmentResultShow({
                                                         Atasan
                                                     </TableHead>
                                                     <TableHead className="text-center">
-                                                        Bawahan
+                                                        Bawahan/Rekan
                                                     </TableHead>
                                                     <TableHead className="text-center">
                                                         Rata-rata
@@ -226,7 +231,7 @@ export default function AssessmentResultShow({
                                                                       )
                                                                     : "-"}
                                                             </TableCell>
-                                                            <TableCell className="text-center font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
+                                                            <TableCell className="text-center font-medium tabular-nums text-primary">
                                                                 {dim.scores
                                                                     .boss !==
                                                                 null
@@ -272,7 +277,7 @@ export default function AssessmentResultShow({
                                                               )
                                                             : "-"}
                                                     </TableCell>
-                                                    <TableCell className="text-center font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                                                    <TableCell className="text-center font-bold tabular-nums text-primary">
                                                         {result
                                                             .role_overall_scores
                                                             .boss !== null
@@ -359,7 +364,7 @@ export default function AssessmentResultShow({
                                                             Atasan
                                                         </TableHead>
                                                         <TableHead className="text-center">
-                                                            Bawahan
+                                                            Bawahan/Rekan
                                                         </TableHead>
                                                         <TableHead className="text-center">
                                                             Rata-rata
@@ -384,7 +389,7 @@ export default function AssessmentResultShow({
                                                                           )
                                                                         : "-"}
                                                                 </TableCell>
-                                                                <TableCell className="text-center font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
+                                                                <TableCell className="text-center font-medium tabular-nums text-primary">
                                                                     {sd.scores
                                                                         .boss !==
                                                                     null
@@ -429,7 +434,7 @@ export default function AssessmentResultShow({
                                                                   )
                                                                 : "-"}
                                                         </TableCell>
-                                                        <TableCell className="text-center font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                                                        <TableCell className="text-center font-bold tabular-nums text-primary">
                                                             {dim.scores.boss !==
                                                             null
                                                                 ? dim.scores.boss.toFixed(
@@ -498,6 +503,7 @@ export default function AssessmentResultShow({
                     participantName={result.participant.name}
                     participantEmail={result.participant.email}
                     actionUrl={sendPdfUrl}
+                    raters={raters}
                 />
             )}
         </PageContainer>

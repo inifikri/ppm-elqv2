@@ -44,7 +44,7 @@ export function AssessmentProgress({
                             </span>
                         )}
                         {autosaveStatus === 'saved' && (
-                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                            <span className="flex items-center gap-1 text-primary">
                                 <CheckCircle2 className="size-3" />
                                 <span className="hidden sm:inline">Tersimpan</span>
                             </span>
@@ -86,10 +86,7 @@ export function AssessmentProgress({
             {/* Micro progress bar */}
             <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                 <div
-                    className={cn(
-                        'h-full transition-all duration-300 rounded-full',
-                        answeredCount === totalQuestions ? 'bg-emerald-600' : 'bg-primary'
-                    )}
+                    className="h-full transition-all duration-300 rounded-full bg-primary"
                     style={{ width: `${progressPercent}%` }}
                     role="progressbar"
                     aria-valuenow={answeredCount}

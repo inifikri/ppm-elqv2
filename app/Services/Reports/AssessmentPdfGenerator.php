@@ -17,20 +17,22 @@ class AssessmentPdfGenerator
      */
     public function make(AssessmentReportData $data): DomPdfWrapper
     {
-        // 1. Render grafik grouped bar dimensi (SVG)
+        // 1. Render grafik grouped bar dimensi (SVG -> Data URI base64 agar Dompdf dapat menggambar vektor)
         $dimensionBarChartSvg = $this->chartRenderer->renderVerticalGroupedBarSvg(
             $data->getDimensionChartItems(),
             640,
             240
         );
+        $dimensionBarChartDataUri = 'data:image/svg+xml;base64,'.base64_encode($dimensionBarChartSvg);
 
         // 2. Render grafik grouped bar horizontal untuk setiap sub-dimensi
-        $subDimensionCharts = [];
+        $subDimensionChartsDataUri = [];
         foreach ($data->dimensions as $dim) {
-            $subDimensionCharts[$dim['id']] = $this->chartRenderer->renderHorizontalGroupedBarSvg(
+            $subSvg = $this->chartRenderer->renderHorizontalGroupedBarSvg(
                 $data->getSubDimensionChartItems($dim['id']),
                 640
             );
+            $subDimensionChartsDataUri[$dim['id']] = 'data:image/svg+xml;base64,'.base64_encode($subSvg);
         }
 
         // 3. Load view modular template laporan
@@ -38,7 +40,9 @@ class AssessmentPdfGenerator
         $pdf = Pdf::loadView('reports.assessment.layout', [
             'data' => $data,
             'dimensionBarChartSvg' => $dimensionBarChartSvg,
-            'subDimensionCharts' => $subDimensionCharts,
+            'dimensionBarChartDataUri' => $dimensionBarChartDataUri,
+            'subDimensionCharts' => $subDimensionChartsDataUri,
+            'subDimensionChartsDataUri' => $subDimensionChartsDataUri,
         ]);
 
         $pdf->setPaper('a4', 'portrait');

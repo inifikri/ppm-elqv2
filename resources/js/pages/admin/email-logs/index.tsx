@@ -7,9 +7,10 @@ import {
     Mail,
     RotateCcw,
     Send,
+    Settings,
     User as UserIcon,
 } from "lucide-react";
-import { Head, router } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import { BulkActionBar, type BulkAction } from "@/components/bulk-action-bar";
 import { EmptyState } from "@/components/empty-state";
@@ -41,6 +42,7 @@ import {
     index as emailLogsIndex,
     retry as retryEmailLog,
 } from "@/routes/admin/email-logs";
+import { index as retentionIndex } from "@/routes/admin/settings/retention";
 import type { Paginated } from "@/types";
 
 export type EmailLogItem = {
@@ -88,7 +90,7 @@ function getStatusBadge(status: string) {
             return (
                 <Badge
                     variant="outline"
-                    className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 text-[11px] font-medium px-2 py-0.5 inline-flex items-center gap-1"
+                    className="bg-primary/10 text-primary border-primary/20 text-[11px] font-medium px-2 py-0.5 inline-flex items-center gap-1"
                 >
                     <CheckCircle2 className="size-3" /> Terkirim
                 </Badge>
@@ -173,6 +175,7 @@ export default function EmailLogsIndex({
     availableStatuses: { value: string; label: string }[];
     availableTypes: { value: string; label: string }[];
 }) {
+    const { auth } = usePage().props;
     const [search, setSearch] = useState(filters.search ?? "");
     const [status, setStatus] = useState(filters.status ?? "all");
     const [type, setType] = useState(filters.type ?? "all");
@@ -338,6 +341,16 @@ export default function EmailLogsIndex({
             <PageHeader
                 title="Email Log"
                 description="Monitoring status antrean, pengiriman, dan riwayat email sistem ELQ 360°"
+                actions={
+                    auth.can?.manage_settings ? (
+                        <Button variant="outline" size="sm" asChild>
+                            <Link href={retentionIndex().url}>
+                                <Settings className="mr-1.5 h-4 w-4" />
+                                Pengaturan Retensi
+                            </Link>
+                        </Button>
+                    ) : undefined
+                }
             />
 
             {/* KPI Summary Cards */}
@@ -357,14 +370,14 @@ export default function EmailLogsIndex({
                 </div>
 
                 <div className="rounded-2xl border border-border/70 bg-card p-4 sm:p-5 shadow-xs flex items-center gap-3">
-                    <div className="size-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
                         <CheckCircle2 className="size-5" />
                     </div>
                     <div>
                         <p className="text-xs text-muted-foreground font-medium">
                             Terkirim
                         </p>
-                        <p className="text-xl sm:text-2xl font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
+                        <p className="text-xl sm:text-2xl font-bold text-primary mt-0.5">
                             {stats.sent.toLocaleString("id-ID")}
                         </p>
                     </div>
@@ -770,7 +783,7 @@ export default function EmailLogsIndex({
                                     <span className="text-muted-foreground">
                                         Waktu Berhasil Kirim:
                                     </span>
-                                    <span className="text-emerald-700 dark:text-emerald-300 font-medium">
+                                    <span className="text-primary font-medium">
                                         {formatDate(selectedDetail.sent_at)}
                                     </span>
                                 </div>

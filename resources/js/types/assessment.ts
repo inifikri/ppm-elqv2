@@ -132,5 +132,6 @@ export type ParticipantDashboardData = {
         total_invited: number;
         total_submitted: number;
     };
+    result?: AssessmentResult;
 };
 

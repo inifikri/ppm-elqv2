@@ -16,7 +16,7 @@ export function ScoreCard({ result }: { result: AssessmentResult }) {
                             Skor Keseluruhan
                         </CardTitle>
                         {answered_raters.is_all_complete ? (
-                            <Badge variant="default" className="bg-emerald-600 text-white">
+                            <Badge variant="default" className="bg-primary text-primary-foreground">
                                 Lengkap
                             </Badge>
                         ) : (
@@ -48,7 +48,7 @@ export function ScoreCard({ result }: { result: AssessmentResult }) {
                             Diri Sendiri
                         </span>
                         {answered_raters.self.is_complete ? (
-                            <CheckCircle2 className="size-4 text-emerald-500" />
+                            <CheckCircle2 className="size-4 text-primary" />
                         ) : (
                             <Clock className="size-4 text-amber-500" />
                         )}
@@ -69,18 +69,18 @@ export function ScoreCard({ result }: { result: AssessmentResult }) {
                 <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                            <ShieldCheck className="size-4 text-emerald-500" />
+                            <ShieldCheck className="size-4 text-primary" />
                             Atasan (Boss)
                         </span>
                         {answered_raters.boss.is_complete ? (
-                            <CheckCircle2 className="size-4 text-emerald-500" />
+                            <CheckCircle2 className="size-4 text-primary" />
                         ) : (
                             <Clock className="size-4 text-amber-500" />
                         )}
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-1">
-                    <div className="text-2xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                    <div className="text-2xl font-semibold tabular-nums text-primary">
                         {role_overall_scores.boss !== null ? role_overall_scores.boss.toFixed(2) : '-'}
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -89,16 +89,16 @@ export function ScoreCard({ result }: { result: AssessmentResult }) {
                 </CardContent>
             </Card>
 
-            {/* Bawahan */}
+            {/* Bawahan/Rekan */}
             <Card className="shadow-xs">
                 <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
                             <Users className="size-4 text-amber-500" />
-                            Bawahan (Subordinate)
+                            Bawahan/Rekan (Subordinate/Peer)
                         </span>
                         {answered_raters.subordinate.is_complete ? (
-                            <CheckCircle2 className="size-4 text-emerald-500" />
+                            <CheckCircle2 className="size-4 text-primary" />
                         ) : (
                             <Clock className="size-4 text-amber-500" />
                         )}

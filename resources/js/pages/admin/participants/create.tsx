@@ -287,10 +287,10 @@ export default function CreateParticipant({
                     </FormField>
                 </FormCard>
 
-                {/* Card 3: Penilai Bawahan */}
+                {/* Card 3: Penilai Bawahan/Rekan */}
                 <FormCard
-                    title="Penilai Bawahan (Subordinates)"
-                    description="3 orang bawahan langsung untuk penilaian kepemimpinan 360°."
+                    title="Penilai Bawahan/Rekan (Subordinates/Peers)"
+                    description="3 orang bawahan/rekan langsung untuk penilaian kepemimpinan 360°."
                 >
                     <FormField
                         id="subordinate_0"

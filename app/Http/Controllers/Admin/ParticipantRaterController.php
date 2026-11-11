@@ -76,6 +76,60 @@ class ParticipantRaterController extends Controller
         return back();
     }
 
+    public function remind(Request $request, User $participant, Rater $rater): RedirectResponse
+    {
+        Gate::authorize(PermissionName::RatersResend->value);
+
+        if ((int) $rater->participant_id !== (int) $participant->id) {
+            abort(404, 'Penilai tidak terkait dengan peserta ini.');
+        }
+
+        if ($rater->role === RaterRole::SelfRater) {
+            return back()->withErrors(['message' => 'Penilai diri sendiri mengisi melalui akun peserta.']);
+        }
+
+        if ($rater->isSubmitted()) {
+            return back()->withErrors(['message' => 'Penilai sudah menyelesaikan penilaian.']);
+        }
+
+        if (empty($rater->email)) {
+            return back()->withErrors(['message' => 'Email penilai tidak ditemukan.']);
+        }
+
+        // Throttle 1 menit per rater untuk mencegah spam
+        $recentLog = EmailLog::query()
+            ->where('rater_id', $rater->id)
+            ->where('created_at', '>=', now()->subMinute())
+            ->exists();
+
+        if ($recentLog) {
+            return back()->withErrors(['message' => 'Pengingat baru saja dikirim. Mohon tunggu 1 menit sebelum mengirim ulang.']);
+        }
+
+        $emailLog = EmailLog::create([
+            'type' => EmailLogType::RaterInvitation,
+            'recipient_email' => $rater->email,
+            'user_id' => $participant->id,
+            'rater_id' => $rater->id,
+            'status' => EmailLogStatus::Queued,
+            'queued_at' => now(),
+        ]);
+
+        SendAssessmentInvitation::dispatch($rater, $emailLog->id, isReminder: true);
+
+        activity('raters')
+            ->performedOn($rater)
+            ->causedBy($request->user())
+            ->log("Mengirimkan email pengingat kepada penilai ({$rater->role->label()})");
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => "Email pengingat berhasil dikirimkan ke {$rater->email}.",
+        ]);
+
+        return back();
+    }
+
     public function revoke(Request $request, User $participant, Rater $rater): RedirectResponse
     {
         Gate::authorize(PermissionName::RatersRevoke->value);

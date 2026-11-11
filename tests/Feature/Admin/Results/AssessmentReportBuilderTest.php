@@ -9,6 +9,7 @@ use App\Models\Question;
 use App\Models\Rater;
 use App\Models\SubDimension;
 use App\Models\User;
+use App\Services\Reports\AssessmentPdfGenerator;
 use App\Services\Reports\AssessmentReportBuilder;
 use Database\Seeders\RolePermissionSeeder;
 
@@ -75,4 +76,36 @@ test('AssessmentReportBuilder: menyusun hierarki DTO lengkap, kategori efektivit
     $subChartItems = $dto->getSubDimensionChartItems($dim1->id);
     expect($subChartItems)->toHaveCount(1)
         ->and($subChartItems[0]['label'])->toBe('Perencanaan');
+});
+
+test('AssessmentPdfGenerator: menghasilkan binary PDF dengan grafik vektor berbasis Data URI', function () {
+    $participant = User::factory()->participant()->create(['name' => 'Budi Pratama']);
+    $dim1 = Dimension::factory()->create(['name' => 'Task Oriented', 'sort_order' => 1]);
+    $sub1 = SubDimension::factory()->create(['dimension_id' => $dim1->id, 'name' => 'Perencanaan', 'sort_order' => 1]);
+    $q1 = Question::factory()->create(['sub_dimension_id' => $sub1->id, 'text' => 'Pertanyaan 1', 'sort_order' => 1]);
+
+    $self = Rater::factory()->selfRater()->submitted()->create(['participant_id' => $participant->id]);
+    Answer::factory()->create(['rater_id' => $self->id, 'question_id' => $q1->id, 'value' => 6]);
+
+    $builder = app(AssessmentReportBuilder::class);
+    $dto = $builder->build($participant);
+
+    $pdfGen = app(AssessmentPdfGenerator::class);
+    $binary = $pdfGen->generateBinary($dto);
+
+    expect(strlen($binary))->toBeGreaterThan(1000)
+        ->and(str_starts_with($binary, '%PDF-'))->toBeTrue();
+
+    // Verifikasi stream PDF memuat instruksi grafik yang digambar Dompdf
+    preg_match_all('/stream\r?\n(.*)\r?\nendstream/sU', $binary, $matches);
+    $hasSvgDrawings = false;
+    foreach ($matches[1] as $stream) {
+        $decompressed = @gzuncompress($stream);
+        // Memeriksa keberadaan kode warna palet chart (#1e40af -> 0.118 0.251 0.686)
+        if ($decompressed && str_contains($decompressed, '0.118 0.251 0.686 rg')) {
+            $hasSvgDrawings = true;
+            break;
+        }
+    }
+    expect($hasSvgDrawings)->toBeTrue();
 });

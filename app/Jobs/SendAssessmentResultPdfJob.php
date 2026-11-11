@@ -23,7 +23,9 @@ class SendAssessmentResultPdfJob implements ShouldQueue
 
     public function __construct(
         public User $participant,
-        public int $emailLogId
+        public int $emailLogId,
+        public ?string $recipientEmail = null,
+        public ?string $recipientName = null,
     ) {}
 
     public function handle(
@@ -42,9 +44,17 @@ class SendAssessmentResultPdfJob implements ShouldQueue
             $slug = Str::slug($this->participant->name) ?: 'peserta';
             $filename = "ELQ-Result_{$slug}_".now()->format('Ymd').'.pdf';
 
-            // Kirim email dengan lampiran PDF ke email akun peserta
-            Mail::to($this->participant->email)
-                ->send(new AssessmentResultMail($this->participant, $pdfBinary, $filename));
+            $targetEmail = $this->recipientEmail ?: $this->participant->email;
+
+            // Kirim email dengan lampiran PDF ke email tujuan
+            Mail::to($targetEmail)
+                ->send(new AssessmentResultMail(
+                    $this->participant,
+                    $pdfBinary,
+                    $filename,
+                    $reportData,
+                    $this->recipientName
+                ));
 
             // Perbarui log email menjadi Sent (tanpa menyimpan lampiran/isi jawaban)
             $emailLog?->update([

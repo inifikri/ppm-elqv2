@@ -31,6 +31,7 @@ export type QuestionRow = {
     text: string;
     text_plain: string;
     sort_order: number;
+    answers_count?: number;
 };
 
 export type Company = {

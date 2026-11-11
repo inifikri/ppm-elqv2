@@ -211,7 +211,7 @@ export default function UserShow({
                                 <dd className="flex items-center gap-1.5 font-medium mt-0.5 text-xs">
                                     {user.email_verified_at ? (
                                         <>
-                                            <CheckCircle2 className="size-4 text-emerald-600" />
+                                            <CheckCircle2 className="size-4 text-primary" />
                                             <span>
                                                 Terverifikasi (
                                                 {formatDate(

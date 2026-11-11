@@ -18,7 +18,9 @@ class SendResultPdfRequest extends FormRequest
      */
     public function rules(): array
     {
-        // Penerima hanya email akun peserta yang dinilai (tidak menerima email dari input).
-        return [];
+        return [
+            'recipients' => ['sometimes', 'array', 'min:1'],
+            'recipients.*' => ['required', 'string', 'email:rfc,filter', 'max:255'],
+        ];
     }
 }

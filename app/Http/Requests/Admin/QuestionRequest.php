@@ -13,14 +13,13 @@ class QuestionRequest extends FormRequest
     }
 
     /**
-     * Teks dari editor rich text: hanya tag format dasar, tanpa atribut (cegah XSS).
+     * Teks pertanyaan dibersihkan dari tag HTML dan whitespace berlebih.
      */
     protected function prepareForValidation(): void
     {
-        $clean = strip_tags((string) $this->input('text'), '<p><br><b><strong><i><em><u><ul><ol><li>');
-        $clean = preg_replace('/<(\w+)\b[^>]*>/', '<$1>', $clean) ?? '';
+        $clean = strip_tags((string) $this->input('text'));
 
-        $this->merge(['text' => trim(strip_tags($clean)) === '' ? '' : trim($clean)]);
+        $this->merge(['text' => trim($clean)]);
     }
 
     /**

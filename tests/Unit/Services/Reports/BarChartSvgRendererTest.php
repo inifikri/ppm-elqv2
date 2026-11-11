@@ -43,7 +43,7 @@ test('BarChartSvgRenderer: renderVerticalGroupedBarSvg menghasilkan markup SVG v
         ->and($svg)->toContain('Rata-rata')
         ->and($svg)->toContain('Diri Sendiri')
         ->and($svg)->toContain('Atasan')
-        ->and($svg)->toContain('Bawahan');
+        ->and($svg)->toContain('Bawahan/Rekan');
 });
 
 test('BarChartSvgRenderer: renderHorizontalGroupedBarSvg membungkus teks panjang dan menangani nilai null', function () {

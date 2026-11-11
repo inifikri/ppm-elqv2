@@ -28,7 +28,7 @@ class BarChartSvgRenderer
         ],
         'subordinate' => [
             'key' => 'subordinate',
-            'label' => 'Bawahan',
+            'label' => 'Bawahan/Rekan',
             'color' => '#d97706', // Amber 600
         ],
     ];

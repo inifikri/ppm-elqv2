@@ -29,7 +29,7 @@ export type TopbarShellProps = {
     right?: ReactNode;
     className?: string;
     containerClassName?: string;
-    maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '7xl' | 'full';
+    maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '5xl' | '7xl' | 'full';
 };
 
 export function TopbarShell({
@@ -48,6 +48,7 @@ export function TopbarShell({
         lg: 'max-w-screen-lg',
         xl: 'max-w-screen-xl',
         '2xl': 'max-w-2xl',
+        '5xl': 'max-w-5xl',
         '7xl': 'max-w-7xl',
         full: 'max-w-full',
     }[maxWidth];

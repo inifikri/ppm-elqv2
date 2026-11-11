@@ -48,7 +48,7 @@ Selesaikan verifikasi alamat email Anda untuk mulai mengakses asesmen kepemimpin
             <strong style="color: #0f172a;">Langkah Selanjutnya Setelah Verifikasi:</strong>
             <ul style="margin: 8px 0 0 0; padding-left: 20px; color: #64748b;">
                 <li>Login ke dashboard peserta ELQ 360°.</li>
-                <li>Mendaftarkan formasi penilai (1 Atasan Langsung &amp; 3 Rekan Bawahan).</li>
+                <li>Mendaftarkan formasi penilai (1 Atasan Langsung &amp; 3 Bawahan/Rekan).</li>
                 <li>Mengisi kuesioner asesmen mandiri (Self-Assessment).</li>
             </ul>
         </td>

@@ -13,6 +13,8 @@ export function MasterForm({
     form,
     cancelHref,
     resettable = false,
+    id,
+    onSubmit,
     children,
 }: {
     title: string;
@@ -20,13 +22,15 @@ export function MasterForm({
     cancelHref: InertiaLinkProps['href'];
     /** Adds a Reset button (use on edit forms). */
     resettable?: boolean;
+    id?: string;
+    onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void;
     children: (errors: Record<string, string>) => ReactNode;
 }) {
     return (
         <PageContainer narrow>
             <BackButton href={cancelHref} />
             <PageHeader title={title} />
-            <Form {...form} className="space-y-4">
+            <Form id={id} onSubmit={onSubmit} {...form} className="space-y-4">
                 {({ processing, errors, isDirty, reset }) => (
                     <>
                         <UnsavedChangesGuard dirty={isDirty} />

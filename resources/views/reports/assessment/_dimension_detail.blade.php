@@ -1,20 +1,20 @@
 @foreach($data->dimensions as $dimIndex => $dim)
     <div class="page-break">
         {{-- Header Dimensi --}}
-        <table style="width: 100%; border-bottom: 2px solid #1e40af; padding-bottom: 6px; margin-bottom: 12px;">
+        <table style="width: 100%; border-bottom: 2px solid #32327f; padding-bottom: 6px; margin-bottom: 12px;">
             <tr>
                 <td style="vertical-align: middle;">
                     <div style="font-size: 8pt; color: #64748b; font-weight: bold; text-transform: uppercase;">
                         RINCIAN DIMENSI {{ $dimIndex + 1 }} DARI {{ count($data->dimensions) }}
                     </div>
-                    <div style="font-size: 13pt; color: #1e40af; font-weight: bold; margin-top: 2px;">
+                    <div style="font-size: 13pt; color: #32327f; font-weight: bold; margin-top: 2px;">
                         {{ $dim['name'] }}
                     </div>
                 </td>
                 <td style="text-align: right; vertical-align: middle;">
                     <div style="display: inline-block; text-align: right;">
                         <span style="font-size: 8.5pt; color: #64748b; margin-right: 4px;">Rata-rata Dimensi:</span>
-                        <span style="font-size: 13pt; font-weight: bold; color: #1e40af;">
+                        <span style="font-size: 13pt; font-weight: bold; color: #32327f;">
                             {{ $dim['scores']['average'] !== null ? number_format($dim['scores']['average'], 2) : '-' }}
                         </span>
                         @if($dim['category'])
@@ -28,13 +28,20 @@
         </table>
 
         {{-- Grafik Horizontal Sub-Dimensi --}}
-        @if(isset($subDimensionCharts[$dim['id']]))
+        @if(isset($subDimensionChartsDataUri[$dim['id']]) || isset($subDimensionCharts[$dim['id']]))
+            @php
+                $chartSrc = $subDimensionChartsDataUri[$dim['id']] ?? $subDimensionCharts[$dim['id']];
+            @endphp
             <div class="page-break-avoid" style="margin-bottom: 14px;">
                 <div style="font-size: 9pt; font-weight: bold; color: #334155; margin-bottom: 4px; text-transform: uppercase;">
                     Grafik Perbandingan Sub-Dimensi
                 </div>
                 <div style="text-align: center; margin: 0 auto;">
-                    {!! $subDimensionCharts[$dim['id']] !!}
+                    @if(str_starts_with($chartSrc, 'data:image'))
+                        <img src="{{ $chartSrc }}" width="640" style="width: 100%; max-width: 640px; height: auto;" alt="Grafik Sub-Dimensi {{ $dim['name'] }}" />
+                    @else
+                        {!! $chartSrc !!}
+                    @endif
                 </div>
             </div>
         @endif
@@ -53,7 +60,7 @@
                         <th style="width: 9%;">Rata-rata</th>
                         <th style="width: 9%;">Diri Sendiri</th>
                         <th style="width: 9%;">Atasan</th>
-                        <th style="width: 9%;">Bawahan</th>
+                        <th style="width: 9%;">Bawahan/Rekan</th>
                     </tr>
                 </thead>
                 <tbody>

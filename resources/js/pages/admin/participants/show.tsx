@@ -1,10 +1,17 @@
 import {
+    AlertTriangle,
     ArrowLeft,
+    Bell,
     Briefcase,
     Building2,
     Calendar,
+    CalendarClock,
+    Check,
     CheckCircle2,
+    ChevronLeft,
+    ChevronRight,
     Clock,
+    Copy,
     ExternalLink,
     FileBarChart2,
     Mail,
@@ -12,13 +19,17 @@ import {
     Phone,
     Plus,
     RotateCcw,
+    Send,
     ShieldAlert,
     Trash2,
     UserCheck,
+    Users,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Head, Link, router } from "@inertiajs/react";
 import { useState } from "react";
 import {
+    remind as remindRater,
     resend as resendRater,
     revoke as revokeRater,
     store as storeRaters,
@@ -51,6 +62,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 import { useInitials } from "@/hooks/use-initials";
 import { cn } from "@/lib/utils";
 import type { ParticipantDetail, ParticipantRaterItem } from "@/types";
@@ -80,6 +99,10 @@ export default function ParticipantShow({
 
     // Resend invitation state
     const [resendTarget, setResendTarget] =
+        useState<ParticipantRaterItem | null>(null);
+
+    // Reminder state
+    const [reminderTarget, setReminderTarget] =
         useState<ParticipantRaterItem | null>(null);
 
     // Revoke link state
@@ -115,6 +138,21 @@ export default function ParticipantShow({
             {
                 preserveScroll: true,
                 onFinish: () => setResendTarget(null),
+            },
+        );
+    };
+
+    const handleRemind = () => {
+        if (!reminderTarget) return;
+        router.post(
+            remindRater.url({
+                participant: participant.id,
+                rater: reminderTarget,
+            }),
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setReminderTarget(null),
             },
         );
     };
@@ -187,6 +225,46 @@ export default function ParticipantShow({
         );
     };
 
+    const [copiedUlid, setCopiedUlid] = useState<string | null>(null);
+
+    const handleCopyLink = (rater: ParticipantRaterItem) => {
+        const url = `${window.location.origin}/rater/${rater.ulid}`;
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard
+                .writeText(url)
+                .then(() => {
+                    setCopiedUlid(rater.ulid);
+                    toast.success(
+                        `Tautan penilai (${rater.role_label}) berhasil disalin.`,
+                    );
+                    setTimeout(() => setCopiedUlid(null), 2500);
+                })
+                .catch(() => {
+                    toast.error("Gagal menyalin tautan.");
+                });
+        } else {
+            const textArea = document.createElement("textarea");
+            textArea.value = url;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand("copy");
+                setCopiedUlid(rater.ulid);
+                toast.success(
+                    `Tautan penilai (${rater.role_label}) berhasil disalin.`,
+                );
+                setTimeout(() => setCopiedUlid(null), 2500);
+            } catch {
+                toast.error("Gagal menyalin tautan.");
+            } finally {
+                document.body.removeChild(textArea);
+            }
+        }
+    };
+
     const selfRater = raters.find((r) => r.role === "self");
     const bossRater = raters.find((r) => r.role === "boss");
     const subordinateRaters = raters.filter((r) => r.role === "subordinate");
@@ -194,6 +272,10 @@ export default function ParticipantShow({
 
     const totalRaters = raters.length;
     const submittedCount = raters.filter((r) => r.is_submitted).length;
+    const pendingCount = totalRaters - submittedCount;
+    const overdueRaters = externalRaters.filter(
+        (r) => !r.is_submitted && r.is_overdue,
+    );
     const selfSubmitted = selfRater?.is_submitted ?? false;
     const bossSubmitted = bossRater?.is_submitted ?? false;
     const subSubmittedCount = subordinateRaters.filter(
@@ -206,7 +288,7 @@ export default function ParticipantShow({
         <PageContainer>
             <Head title={`Peserta: ${participant.name}`} />
 
-            <div className="mb-2">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <Button
                     asChild
                     variant="ghost"
@@ -226,6 +308,61 @@ export default function ParticipantShow({
                             : "Kembali ke Daftar Peserta"}
                     </Link>
                 </Button>
+
+                {/* Tombol Navigasi Antar-Peserta (Previous & Next) */}
+                <div className="flex items-center gap-1.5">
+                    {participant.prev_participant ? (
+                        <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            icon={ChevronLeft}
+                            title={`Peserta sebelumnya: ${participant.prev_participant.name}`}
+                        >
+                            <Link
+                                href={`/admin/participants/${participant.prev_participant.id}`}
+                            >
+                                Sebelumnya
+                            </Link>
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            icon={ChevronLeft}
+                            disabled
+                            title="Tidak ada peserta sebelumnya"
+                        >
+                            Sebelumnya
+                        </Button>
+                    )}
+
+                    {participant.next_participant ? (
+                        <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            iconRight={ChevronRight}
+                            title={`Peserta berikutnya: ${participant.next_participant.name}`}
+                        >
+                            <Link
+                                href={`/admin/participants/${participant.next_participant.id}`}
+                            >
+                                Berikutnya
+                            </Link>
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            iconRight={ChevronRight}
+                            disabled
+                            title="Tidak ada peserta berikutnya"
+                        >
+                            Berikutnya
+                        </Button>
+                    )}
+                </div>
             </div>
 
             <PageHeader
@@ -272,7 +409,7 @@ export default function ParticipantShow({
                                     variant="default"
                                     size="sm"
                                     icon={FileBarChart2}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
                                 >
                                     <Link
                                         href={`/admin/participants/${participant.id}/result`}
@@ -368,8 +505,40 @@ export default function ParticipantShow({
                     </div>
                 </div>
 
-                {/* 360° Evaluators Panel */}
-                <div className="space-y-4">
+                {/* Banner Notifikasi Sistem: Penilai Melewati Batas 2 Hari */}
+                {overdueRaters.length > 0 && (
+                    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-950 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                            <AlertTriangle className="size-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                            <div>
+                                <p className="font-semibold text-foreground">
+                                    Notifikasi Sistem: {overdueRaters.length}{" "}
+                                    Penilai Melewati Batas Waktu 2 Hari
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                    Terdapat penilai yang belum menyelesaikan
+                                    kuesioner asesmen dalam waktu lebih dari 2
+                                    hari sejak didaftarkan:{" "}
+                                    <span className="font-medium text-foreground">
+                                        {overdueRaters
+                                            .map(
+                                                (r) =>
+                                                    `${r.role_label} (${r.email})`,
+                                            )
+                                            .join(", ")}
+                                    </span>
+                                    . Anda dapat menggunakan tombol{" "}
+                                    <strong>Kirim Pengingat</strong> pada tabel
+                                    di bawah untuk mengirimkan pesan pengingat
+                                    resmi.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 360° Evaluators Panel: Tabel Modern */}
+                <div className="space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div>
                             <h2 className="text-base sm:text-lg font-bold text-foreground tracking-tight">
@@ -397,157 +566,214 @@ export default function ParticipantShow({
                             </Button>
                         </div>
                     ) : (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {/* 1. Self Evaluation Card */}
-                            {selfRater && (
-                                <div
-                                    className={cn(
-                                        "rounded-2xl border p-5 space-y-4 transition-all shadow-xs flex flex-col justify-between",
-                                        selfRater.is_submitted
-                                            ? "bg-emerald-50/30 border-emerald-200/80 dark:bg-emerald-950/15 dark:border-emerald-800/60"
-                                            : "bg-card border-border/70",
-                                    )}
-                                >
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <Badge
-                                                variant="secondary"
-                                                className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 text-xs font-semibold"
+                        <div className="rounded-2xl border border-border/70 bg-card overflow-hidden shadow-xs">
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader className="bg-muted/40 [&_th]:h-11 [&_th]:text-xs [&_th]:font-semibold [&_th]:tracking-wider [&_th]:text-muted-foreground [&_th]:uppercase">
+                                        <TableRow>
+                                            <TableHead
+                                                scope="col"
+                                                className="min-w-[170px]"
                                             >
-                                                Penilaian Mandiri (Self)
-                                            </Badge>
-                                            <Badge
-                                                variant={
-                                                    selfRater.is_submitted
-                                                        ? "default"
-                                                        : "outline"
-                                                }
-                                                className={cn(
-                                                    "text-[10px] px-2 py-0.5",
-                                                    selfRater.is_submitted
-                                                        ? "bg-emerald-600 text-white"
-                                                        : "text-amber-600 border-amber-300 dark:text-amber-400",
-                                                )}
+                                                Peran Penilai
+                                            </TableHead>
+                                            <TableHead
+                                                scope="col"
+                                                className="min-w-[220px]"
                                             >
-                                                {selfRater.is_submitted
-                                                    ? "Sudah Selesai"
-                                                    : "Belum Selesai"}
-                                            </Badge>
-                                        </div>
-
-                                        <div className="space-y-1">
-                                            <p className="text-sm font-semibold text-foreground truncate">
-                                                {participant.name}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground truncate">
-                                                {participant.email}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-2 border-t border-border/50 text-xs text-muted-foreground">
-                                        {selfRater.is_submitted ? (
-                                            <p className="text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 font-medium">
-                                                <UserCheck className="size-3.5" />
-                                                Selesai pada:{" "}
-                                                {formatDate(
-                                                    selfRater.submitted_at,
-                                                )}
-                                            </p>
-                                        ) : (
-                                            <p className="flex items-center gap-1.5">
-                                                <Clock className="size-3.5 text-amber-500" />
-                                                Belum menyelesaikan kuesioner
-                                                mandiri
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* 2. External Raters Cards (Atasan & Bawahan) */}
-                            {externalRaters.map((rater) => (
-                                <div
-                                    key={rater.id}
-                                    className={cn(
-                                        "rounded-2xl border p-5 space-y-4 transition-all shadow-xs flex flex-col justify-between",
-                                        rater.is_submitted
-                                            ? "bg-emerald-50/30 border-emerald-200/80 dark:bg-emerald-950/15 dark:border-emerald-800/60"
-                                            : "bg-card border-border/70",
-                                    )}
-                                >
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <Badge
-                                                variant="secondary"
-                                                className={cn(
-                                                    "text-xs font-semibold",
-                                                    rater.role === "boss"
-                                                        ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200"
-                                                        : "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200",
-                                                )}
+                                                Identitas / Email
+                                            </TableHead>
+                                            <TableHead
+                                                scope="col"
+                                                className="min-w-[130px]"
                                             >
-                                                {rater.role_label}
-                                            </Badge>
-
-                                            <div className="flex items-center gap-1.5">
-                                                <Badge
-                                                    variant={
-                                                        rater.is_submitted
-                                                            ? "default"
-                                                            : "outline"
-                                                    }
-                                                    className={cn(
-                                                        "text-[10px] px-2 py-0.5",
-                                                        rater.is_submitted
-                                                            ? "bg-emerald-600 text-white"
-                                                            : "text-amber-600 border-amber-300 dark:text-amber-400",
-                                                    )}
-                                                >
-                                                    {rater.is_submitted
-                                                        ? "Sudah Submit"
-                                                        : "Belum Submit"}
-                                                </Badge>
-
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="size-7 text-muted-foreground hover:text-foreground"
-                                                    title="Ubah email penilai"
-                                                    onClick={() => {
-                                                        setEditRaterTarget(
-                                                            rater,
-                                                        );
-                                                        setEditRaterEmail(
-                                                            rater.email || "",
-                                                        );
-                                                        setEditRaterSendInvitation(
-                                                            !rater.is_submitted,
-                                                        );
-                                                        setEditRaterError(null);
-                                                    }}
-                                                >
-                                                    <Pencil className="size-3.5" />
-                                                </Button>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-1">
-                                            <p className="text-sm font-semibold text-foreground break-all">
-                                                {rater.email || "-"}
-                                            </p>
-                                            <div className="text-xs text-muted-foreground space-y-0.5">
-                                                {rater.is_submitted ? (
-                                                    <p className="text-emerald-700 dark:text-emerald-300 font-medium">
-                                                        Diisi pada:{" "}
-                                                        {formatDate(
-                                                            rater.submitted_at,
+                                                Status Asesmen
+                                            </TableHead>
+                                            <TableHead
+                                                scope="col"
+                                                className="min-w-[210px]"
+                                            >
+                                                Durasi Menunggu
+                                            </TableHead>
+                                            <TableHead
+                                                scope="col"
+                                                className="min-w-[160px]"
+                                            >
+                                                Status Undangan
+                                            </TableHead>
+                                            <TableHead
+                                                scope="col"
+                                                className="text-right min-w-[240px]"
+                                            >
+                                                Aksi
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody className="bg-white dark:bg-card">
+                                        {/* 1. Self Evaluation Row */}
+                                        {selfRater && (
+                                            <TableRow className="hover:bg-accent/40">
+                                                <TableCell>
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className="bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground text-xs font-semibold"
+                                                    >
+                                                        Penilaian Mandiri (Self)
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="font-medium text-foreground text-sm">
+                                                        {participant.name}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {participant.email}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        variant={
+                                                            selfRater.is_submitted
+                                                                ? "default"
+                                                                : "outline"
+                                                        }
+                                                        className={cn(
+                                                            "text-[10px] px-2 py-0.5",
+                                                            selfRater.is_submitted
+                                                                ? "bg-primary text-primary-foreground"
+                                                                : "text-amber-600 border-amber-300 dark:text-amber-400",
                                                         )}
-                                                    </p>
-                                                ) : (
-                                                    <p>
-                                                        Status Undangan:{" "}
-                                                        <span className="font-medium text-foreground">
+                                                    >
+                                                        {selfRater.is_submitted
+                                                            ? "Sudah Selesai"
+                                                            : "Belum Selesai"}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {selfRater.is_submitted ? (
+                                                        <div className="text-xs text-primary flex items-center gap-1.5 font-medium">
+                                                            <UserCheck className="size-3.5" />
+                                                            Selesai pada:{" "}
+                                                            {formatDate(
+                                                                selfRater.submitted_at,
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                                            <Clock className="size-3.5 text-amber-500" />
+                                                            Menunggu pengisian
+                                                            peserta
+                                                        </div>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        Mengisi mandiri di akun
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <span className="text-xs text-muted-foreground italic">
+                                                        -
+                                                    </span>
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {/* 2. External Raters Rows (Atasan & Bawahan) */}
+                                        {externalRaters.map((rater) => (
+                                            <TableRow
+                                                key={rater.id}
+                                                className="hover:bg-accent/40"
+                                            >
+                                                <TableCell>
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className={cn(
+                                                            "text-xs font-semibold",
+                                                            rater.role ===
+                                                                "boss"
+                                                                ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200"
+                                                                : "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200",
+                                                        )}
+                                                    >
+                                                        {rater.role_label}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="font-medium text-foreground text-sm break-all">
+                                                        {rater.email || "-"}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        variant={
+                                                            rater.is_submitted
+                                                                ? "default"
+                                                                : "outline"
+                                                        }
+                                                        className={cn(
+                                                            "text-[10px] px-2 py-0.5",
+                                                            rater.is_submitted
+                                                                ? "bg-primary text-primary-foreground"
+                                                                : "text-amber-600 border-amber-300 dark:text-amber-400",
+                                                        )}
+                                                    >
+                                                        {rater.is_submitted
+                                                            ? "Sudah Submit"
+                                                            : "Belum Submit"}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {rater.is_submitted ? (
+                                                        <div className="text-xs text-primary flex items-center gap-1.5 font-medium">
+                                                            <CheckCircle2 className="size-3.5" />
+                                                            Diserahkan:{" "}
+                                                            {formatDate(
+                                                                rater.submitted_at,
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-1">
+                                                            {rater.is_overdue ? (
+                                                                <Badge
+                                                                    variant="destructive"
+                                                                    className="bg-amber-600 hover:bg-amber-600 text-white gap-1 text-[11px] font-medium w-fit"
+                                                                >
+                                                                    <AlertTriangle className="size-3" />
+                                                                    Menunggu{" "}
+                                                                    {
+                                                                        rater.days_pending
+                                                                    }{" "}
+                                                                    hari
+                                                                    (Melewati 2
+                                                                    hari)
+                                                                </Badge>
+                                                            ) : (
+                                                                <Badge
+                                                                    variant="outline"
+                                                                    className="text-muted-foreground gap-1 text-[11px] w-fit"
+                                                                >
+                                                                    <Clock className="size-3 text-sky-500" />
+                                                                    Menunggu{" "}
+                                                                    {rater.days_pending ===
+                                                                    0
+                                                                        ? "Hari ini (< 24 jam)"
+                                                                        : `${rater.days_pending} hari`}
+                                                                </Badge>
+                                                            )}
+                                                            {rater.created_at && (
+                                                                <div className="text-[11px] text-muted-foreground/75">
+                                                                    Daftar:{" "}
+                                                                    {formatDate(
+                                                                        rater.created_at,
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="text-xs text-muted-foreground space-y-0.5">
+                                                        <div className="font-medium text-foreground">
                                                             {rater.invitation_status ===
                                                             "sent"
                                                                 ? "Terkirim"
@@ -555,60 +781,195 @@ export default function ParticipantShow({
                                                                     "failed"
                                                                   ? "Gagal Kirim"
                                                                   : "Dalam Antrean"}
-                                                        </span>
+                                                        </div>
                                                         {rater.invitation_sent_at && (
-                                                            <>
-                                                                {" "}
-                                                                (
+                                                            <div className="text-[11px]">
                                                                 {formatDate(
                                                                     rater.invitation_sent_at,
                                                                 )}
-                                                                )
-                                                            </>
+                                                            </div>
                                                         )}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {!rater.is_submitted ? (
-                                        <div className="flex items-center gap-2 pt-3 border-t border-border/50">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                icon={Mail}
-                                                className="flex-1 text-xs h-8"
-                                                onClick={() =>
-                                                    setResendTarget(rater)
-                                                }
-                                            >
-                                                Kirim Ulang
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                icon={RotateCcw}
-                                                className="flex-1 text-xs h-8 text-destructive hover:text-destructive"
-                                                onClick={() =>
-                                                    setRevokeTarget(rater)
-                                                }
-                                            >
-                                                Cabut Link
-                                            </Button>
-                                        </div>
-                                    ) : (
-                                        <div className="pt-2 border-t border-border/50 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 font-medium">
-                                            <CheckCircle2 className="size-3.5" />
-                                            Penilaian telah diserahkan
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    {rater.is_submitted ? (
+                                                        <span className="text-xs text-primary font-medium inline-flex items-center gap-1">
+                                                            <CheckCircle2 className="size-3.5" />
+                                                            Selesai
+                                                        </span>
+                                                    ) : (
+                                                        <div className="flex items-center justify-end gap-1.5">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                icon={Send}
+                                                                className="h-8 text-xs font-medium"
+                                                                onClick={() =>
+                                                                    setReminderTarget(
+                                                                        rater,
+                                                                    )
+                                                                }
+                                                            >
+                                                                Kirim Pengingat
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="size-8 text-muted-foreground hover:text-foreground"
+                                                                title="Salin tautan penilai"
+                                                                onClick={() =>
+                                                                    handleCopyLink(
+                                                                        rater,
+                                                                    )
+                                                                }
+                                                            >
+                                                                {copiedUlid ===
+                                                                rater.ulid ? (
+                                                                    <Check className="size-3.5 text-emerald-600" />
+                                                                ) : (
+                                                                    <Copy className="size-3.5" />
+                                                                )}
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="size-8 text-muted-foreground hover:text-foreground"
+                                                                title="Ubah email penilai"
+                                                                onClick={() => {
+                                                                    setEditRaterTarget(
+                                                                        rater,
+                                                                    );
+                                                                    setEditRaterEmail(
+                                                                        rater.email ||
+                                                                            "",
+                                                                    );
+                                                                    setEditRaterSendInvitation(
+                                                                        !rater.is_submitted,
+                                                                    );
+                                                                    setEditRaterError(
+                                                                        null,
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <Pencil className="size-3.5" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="size-8 text-destructive hover:text-destructive"
+                                                                title="Cabut tautan penilai"
+                                                                onClick={() =>
+                                                                    setRevokeTarget(
+                                                                        rater,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <RotateCcw className="size-3.5" />
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* Dialog Konfirmasi Kirim Pengingat */}
+            <AlertDialog
+                open={reminderTarget !== null}
+                onOpenChange={(open) => !open && setReminderTarget(null)}
+            >
+                <AlertDialogContent className="w-[calc(100%-2.5rem)] max-w-lg p-6 sm:p-7 rounded-2xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2 text-foreground">
+                            <Send className="size-5 text-primary" />
+                            Kirim Email Pengingat Asesmen?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="space-y-3">
+                            <p>
+                                Sistem akan mengirimkan pesan email pengingat
+                                resmi dengan format profesional dan sopan ke
+                                alamat email penilai:
+                            </p>
+                            <div className="rounded-xl border border-border/70 bg-muted/30 p-3.5 text-xs space-y-1.5">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Peran Penilai:
+                                    </span>
+                                    <strong className="text-foreground">
+                                        {reminderTarget?.role_label}
+                                    </strong>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Alamat Email:
+                                    </span>
+                                    <span className="font-mono font-medium text-foreground">
+                                        {reminderTarget?.email}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Peserta Dinilai:
+                                    </span>
+                                    <span className="text-foreground font-medium">
+                                        {participant.name}
+                                    </span>
+                                </div>
+                                {reminderTarget?.days_pending !== null &&
+                                    reminderTarget?.days_pending !==
+                                        undefined && (
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">
+                                                Durasi Menunggu:
+                                            </span>
+                                            <span
+                                                className={cn(
+                                                    "font-semibold",
+                                                    reminderTarget.is_overdue
+                                                        ? "text-amber-600 dark:text-amber-400"
+                                                        : "text-foreground",
+                                                )}
+                                            >
+                                                {reminderTarget.days_pending}{" "}
+                                                hari
+                                                {reminderTarget.is_overdue &&
+                                                    " (Melewati batas 2 hari)"}
+                                            </span>
+                                        </div>
+                                    )}
+                            </div>
+                            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-[11px] text-muted-foreground leading-relaxed">
+                                <strong className="text-primary block mb-1">
+                                    Format Pesan Pengingat (Bahasa Baku &
+                                    Sopan):
+                                </strong>
+                                &ldquo;Yth. Bapak/Ibu Penilai, kami menyampaikan
+                                pengingat terkait pelaksanaan evaluasi
+                                kepemimpinan 360° untuk rekan kerja Anda (
+                                {participant.name}). Mohon kesediaannya
+                                meluangkan waktu sejenak (10–15 menit) guna
+                                menyelesaikan kuesioner melalui tautan aman yang
+                                kami sertakan.&rdquo;
+                            </div>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-4">
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleRemind}
+                            className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        >
+                            Kirim Pengingat Sekarang
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Dialog Resend Invitation */}
             <AlertDialog
@@ -804,7 +1165,7 @@ export default function ParticipantShow({
                         </div>
 
                         <div className="space-y-3 pt-2">
-                            <Label>Email 3 Bawahan Langsung</Label>
+                            <Label>Email 3 Bawahan/Rekan Langsung</Label>
                             {[0, 1, 2].map((idx) => (
                                 <Input
                                     key={idx}
@@ -817,7 +1178,7 @@ export default function ParticipantShow({
                                         next[idx] = e.target.value;
                                         setAddSubordinates(next);
                                     }}
-                                    placeholder={`Bawahan ${idx + 1}@perusahaan.com`}
+                                    placeholder={`Bawahan/Rekan ${idx + 1}@perusahaan.com`}
                                     required
                                 />
                             ))}

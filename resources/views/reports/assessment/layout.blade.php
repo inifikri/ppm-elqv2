@@ -25,7 +25,7 @@
             font-weight: bold;
         }
 
-        .text-primary { color: #1e40af; }
+        .text-primary { color: #32327f; }
         .text-muted { color: #64748b; font-size: 8.5pt; }
         .text-center { text-align: center; }
         .text-left { text-align: left; }
@@ -64,14 +64,14 @@
         }
 
         .data-table th {
-            background-color: #1e40af;
+            background-color: #32327f;
             color: #ffffff;
             font-size: 8pt;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.3px;
             padding: 6px 7px;
-            border: 1px solid #1e3a8a;
+            border: 1px solid #272766;
             text-align: center;
         }
 
@@ -105,7 +105,7 @@
 
         /* Section Heading */
         .section-header {
-            border-bottom: 2px solid #1e40af;
+            border-bottom: 2px solid #32327f;
             padding-bottom: 5px;
             margin-top: 16px;
             margin-bottom: 10px;
@@ -113,7 +113,7 @@
 
         .section-title {
             font-size: 12pt;
-            color: #1e40af;
+            color: #32327f;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -137,14 +137,14 @@
         }
 
         .score-card-main {
-            background-color: #eff6ff;
-            border: 1.5px solid #bfdbfe;
+            background-color: #f0f0f8;
+            border: 1.5px solid #c2c2e5;
         }
 
         .score-big {
             font-size: 20pt;
             font-weight: bold;
-            color: #1e40af;
+            color: #32327f;
             margin: 2px 0;
         }
 
@@ -159,18 +159,21 @@
 </head>
 <body>
 
-    {{-- 1. Halaman Utama: Header, Profil Peserta, Skor Keseluruhan & Status --}}
+    {{-- 1. Halaman Utama: Header (Kop Surat Resmi PPM), Profil Peserta, Skor Keseluruhan & Status --}}
     @include('reports.assessment._header')
     @include('reports.assessment._summary')
 
-    {{-- 2. Grafik Bar Dimensi & Tabel Rekapitulasi Dimensi --}}
+    {{-- 2. Kategori Efektivitas Kepemimpinan (ELQ Effectiveness Category) --}}
+    @include('reports.assessment._effectiveness_category')
+
+    {{-- 3. Grafik Bar Dimensi & Tabel Rekapitulasi Dimensi --}}
     @include('reports.assessment._dimension_chart')
     @include('reports.assessment._dimension_table')
 
-    {{-- 3. Rincian per Dimensi (Grafik Horizontal Sub-Dimensi & Tabel Lengkap 39 Pertanyaan) --}}
+    {{-- 4. Rincian per Dimensi (Grafik Horizontal Sub-Dimensi & Tabel Lengkap 39 Pertanyaan) --}}
     @include('reports.assessment._dimension_detail')
 
-    {{-- 4. Halaman Penutup: Legenda Kategori, Skala & Kerahasiaan --}}
+    {{-- 5. Catatan Kerahasiaan Dokumen --}}
     @include('reports.assessment._footer')
 
 </body>

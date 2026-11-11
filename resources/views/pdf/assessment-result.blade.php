@@ -181,16 +181,46 @@
                 <div style="font-size: 9px; color: #94a3b8;">Status: {{ $result['answered_raters']['boss']['submitted'] }}/{{ $result['answered_raters']['boss']['total'] }}</div>
             </td>
             <td class="score-box" style="width: 25%;">
-                <div class="score-label">Bawahan (Subordinate)</div>
+                <div class="score-label">Bawahan/Rekan (Subordinate/Peer)</div>
                 <div class="score-num" style="color: #d97706;">{{ $result['role_overall_scores']['subordinate'] !== null ? number_format($result['role_overall_scores']['subordinate'], 2) : '-' }}</div>
                 <div style="font-size: 9px; color: #94a3b8;">Status: {{ $result['answered_raters']['subordinate']['submitted'] }}/{{ $result['answered_raters']['subordinate']['total'] }}</div>
             </td>
         </tr>
     </table>
 
-    <div class="section-title">Diagram Radar Perbandingan Dimensi Kepemimpinan</div>
-    <div class="radar-container">
-        {!! $radarSvg !!}
+    <div class="section-title">Grafik Perbandingan Dimensi Kepemimpinan</div>
+    <div class="radar-container" style="text-align: center; margin: 12px 0;">
+        @if(!empty($dimensionBarChartDataUri))
+            <img src="{{ $dimensionBarChartDataUri }}" width="640" style="width: 100%; max-width: 640px; height: auto;" alt="Grafik Dimensi" />
+        @elseif(!empty($radarSvg))
+            @if(str_starts_with($radarSvg, 'data:image'))
+                <img src="{{ $radarSvg }}" width="640" style="width: 100%; max-width: 640px; height: auto;" alt="Grafik Radar" />
+            @elseif(str_starts_with(trim($radarSvg), '<svg'))
+                <img src="data:image/svg+xml;base64,{{ base64_encode($radarSvg) }}" width="640" style="width: 100%; max-width: 640px; height: auto;" alt="Grafik Radar" />
+            @else
+                {!! $radarSvg !!}
+            @endif
+        @elseif(isset($result['dimensions']) && count($result['dimensions']) > 0)
+            <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+                @foreach($result['dimensions'] as $dim)
+                    @php
+                        $avgScore = $dim['scores']['average'] ?? 0;
+                        $pct = $avgScore ? min(100, max(0, ($avgScore / 6) * 100)) : 0;
+                    @endphp
+                    <tr>
+                        <td style="width: 25%; font-size: 10px; font-weight: bold; padding: 4px 6px; color: #334155; text-align: left;">{{ $dim['name'] }}</td>
+                        <td style="width: 65%; padding: 4px 6px;">
+                            <div style="background-color: #e2e8f0; border-radius: 4px; height: 14px; width: 100%; overflow: hidden;">
+                                <div style="background-color: #0284c7; width: {{ $pct }}%; height: 14px; border-radius: 4px;"></div>
+                            </div>
+                        </td>
+                        <td style="width: 10%; font-size: 10px; font-weight: bold; text-align: right; padding: 4px 6px; color: #0284c7;">
+                            {{ $avgScore ? number_format($avgScore, 2) : '-' }}
+                        </td>
+                    </tr>
+                @endforeach
+            </table>
+        @endif
     </div>
 
     <div class="section-title" style="page-break-before: auto;">Rincian Skor Per Dimensi &amp; Sub-Dimensi</div>
@@ -200,7 +230,7 @@
                 <th class="text-left" style="width: 44%;">Dimensi &amp; Sub-Dimensi</th>
                 <th style="width: 14%;">Diri Sendiri</th>
                 <th style="width: 14%;">Atasan</th>
-                <th style="width: 14%;">Bawahan</th>
+                <th style="width: 14%;">Bawahan/Rekan</th>
                 <th style="width: 14%;">Rata-rata</th>
             </tr>
         </thead>

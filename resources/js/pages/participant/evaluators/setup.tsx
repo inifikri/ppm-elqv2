@@ -29,9 +29,9 @@ const STEP_TITLES: Record<number, string> = {
     1: 'Informasi Asesmen',
     2: 'Panduan Penilai',
     3: 'Atasan Langsung',
-    4: 'Bawahan 1',
-    5: 'Bawahan 2',
-    6: 'Bawahan 3',
+    4: 'Bawahan/Rekan 1',
+    5: 'Bawahan/Rekan 2',
+    6: 'Bawahan/Rekan 3',
     7: 'Tinjau & Kirim',
 };
 
@@ -325,12 +325,12 @@ export default function EvaluatorsSetup({
                         <div className="grid gap-3 sm:grid-cols-2">
                             <Card className="border border-border/80 shadow-none">
                                 <CardContent className="p-4 space-y-1.5">
-                                    <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                                    <div className="flex items-center gap-2 text-primary">
                                         <ShieldCheck className="size-4" />
                                         <h3 className="text-xs font-semibold">Objektif &amp; Terjaga</h3>
                                     </div>
                                     <p className="text-xs text-muted-foreground leading-relaxed">
-                                        Seluruh respons bawahan diagregatkan tanpa mengekspos skor perorangan kepada peserta.
+                                        Seluruh respons bawahan/rekan diagregatkan tanpa mengekspos skor perorangan kepada peserta.
                                     </p>
                                 </CardContent>
                             </Card>
@@ -372,7 +372,7 @@ export default function EvaluatorsSetup({
                                 <div className="flex items-start gap-2.5">
                                     <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-[11px] font-bold">2</span>
                                     <div>
-                                        <strong className="text-foreground">3 Rekan Bawahan Langsung:</strong> Anggota tim kerja yang berada di bawah koordinasi Anda.
+                                        <strong className="text-foreground">3 Bawahan/Rekan Langsung:</strong> Anggota tim atau rekan kerja yang berada di bawah koordinasi Anda.
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-2.5">
@@ -454,15 +454,15 @@ export default function EvaluatorsSetup({
             {/* ================= STEP 4: BAWAHAN 1 ================= */}
             {step === 4 && (
                 <WizardStep
-                    badge="Langkah 4: Bawahan 1"
-                    title="Alamat Email Bawahan Langsung (1/3)"
-                    description="Rekan kerja bawahan langsung pertama Anda."
+                    badge="Langkah 4: Bawahan/Rekan 1"
+                    title="Alamat Email Bawahan/Rekan (1/3)"
+                    description="Rekan kerja atau bawahan langsung pertama Anda."
                 >
                     {isEditingFromReview && (
                         <div className="mb-4 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-primary">
                             <div className="flex items-center gap-2">
                                 <Edit2 className="size-3.5 shrink-0" />
-                                <span>Sedang mengubah email bawahan 1 dari <strong>Langkah 7 (Tinjau & Kirim)</strong></span>
+                                <span>Sedang mengubah email bawahan/rekan 1 dari <strong>Langkah 7 (Tinjau & Kirim)</strong></span>
                             </div>
                             <Button
                                 type="button"
@@ -478,7 +478,7 @@ export default function EvaluatorsSetup({
 
                     <div className="space-y-2">
                         <Label htmlFor="sub_0" className="text-xs font-semibold text-foreground">
-                            Email Bawahan 1 <span className="text-destructive">*</span>
+                            Email Bawahan/Rekan 1 <span className="text-destructive">*</span>
                         </Label>
                         <Input
                             id="sub_0"
@@ -486,7 +486,7 @@ export default function EvaluatorsSetup({
                             inputMode="email"
                             autoComplete="email"
                             autoCapitalize="none"
-                            placeholder="nama.bawahan1@perusahaan.com"
+                            placeholder="nama.rekan1@perusahaan.com"
                             value={data.subordinate_emails[0]}
                             onChange={(e) => handleSubChange(0, e.target.value)}
                             onKeyDown={(e) => {
@@ -515,15 +515,15 @@ export default function EvaluatorsSetup({
             {/* ================= STEP 5: BAWAHAN 2 ================= */}
             {step === 5 && (
                 <WizardStep
-                    badge="Langkah 5: Bawahan 2"
-                    title="Alamat Email Bawahan Langsung (2/3)"
-                    description="Rekan kerja bawahan langsung kedua Anda."
+                    badge="Langkah 5: Bawahan/Rekan 2"
+                    title="Alamat Email Bawahan/Rekan (2/3)"
+                    description="Rekan kerja atau bawahan langsung kedua Anda."
                 >
                     {isEditingFromReview && (
                         <div className="mb-4 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-primary">
                             <div className="flex items-center gap-2">
                                 <Edit2 className="size-3.5 shrink-0" />
-                                <span>Sedang mengubah email bawahan 2 dari <strong>Langkah 7 (Tinjau & Kirim)</strong></span>
+                                <span>Sedang mengubah email bawahan/rekan 2 dari <strong>Langkah 7 (Tinjau & Kirim)</strong></span>
                             </div>
                             <Button
                                 type="button"
@@ -539,7 +539,7 @@ export default function EvaluatorsSetup({
 
                     <div className="space-y-2">
                         <Label htmlFor="sub_1" className="text-xs font-semibold text-foreground">
-                            Email Bawahan 2 <span className="text-destructive">*</span>
+                            Email Bawahan/Rekan 2 <span className="text-destructive">*</span>
                         </Label>
                         <Input
                             id="sub_1"
@@ -547,7 +547,7 @@ export default function EvaluatorsSetup({
                             inputMode="email"
                             autoComplete="email"
                             autoCapitalize="none"
-                            placeholder="nama.bawahan2@perusahaan.com"
+                            placeholder="nama.rekan2@perusahaan.com"
                             value={data.subordinate_emails[1]}
                             onChange={(e) => handleSubChange(1, e.target.value)}
                             onKeyDown={(e) => {
@@ -576,15 +576,15 @@ export default function EvaluatorsSetup({
             {/* ================= STEP 6: BAWAHAN 3 ================= */}
             {step === 6 && (
                 <WizardStep
-                    badge="Langkah 6: Bawahan 3"
-                    title="Alamat Email Bawahan Langsung (3/3)"
-                    description="Rekan kerja bawahan langsung ketiga Anda."
+                    badge="Langkah 6: Bawahan/Rekan 3"
+                    title="Alamat Email Bawahan/Rekan (3/3)"
+                    description="Rekan kerja atau bawahan langsung ketiga Anda."
                 >
                     {isEditingFromReview && (
                         <div className="mb-4 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-primary">
                             <div className="flex items-center gap-2">
                                 <Edit2 className="size-3.5 shrink-0" />
-                                <span>Sedang mengubah email bawahan 3 dari <strong>Langkah 7 (Tinjau & Kirim)</strong></span>
+                                <span>Sedang mengubah email bawahan/rekan 3 dari <strong>Langkah 7 (Tinjau & Kirim)</strong></span>
                             </div>
                             <Button
                                 type="button"
@@ -600,7 +600,7 @@ export default function EvaluatorsSetup({
 
                     <div className="space-y-2">
                         <Label htmlFor="sub_2" className="text-xs font-semibold text-foreground">
-                            Email Bawahan 3 <span className="text-destructive">*</span>
+                            Email Bawahan/Rekan 3 <span className="text-destructive">*</span>
                         </Label>
                         <Input
                             id="sub_2"
@@ -608,7 +608,7 @@ export default function EvaluatorsSetup({
                             inputMode="email"
                             autoComplete="email"
                             autoCapitalize="none"
-                            placeholder="nama.bawahan3@perusahaan.com"
+                            placeholder="nama.rekan3@perusahaan.com"
                             value={data.subordinate_emails[2]}
                             onChange={(e) => handleSubChange(2, e.target.value)}
                             onKeyDown={(e) => {
@@ -672,7 +672,7 @@ export default function EvaluatorsSetup({
                             </CardContent>
                         </Card>
 
-                        {/* 3 Bawahan Recap */}
+                        {/* 3 Bawahan/Rekan Recap */}
                         {data.subordinate_emails.map((email, idx) => (
                             <Card key={idx} className="border border-border/80 shadow-none">
                                 <CardContent className="p-3.5 flex items-center justify-between gap-2">
@@ -682,7 +682,7 @@ export default function EvaluatorsSetup({
                                         </div>
                                         <div className="min-w-0">
                                             <p className="text-[11px] font-semibold text-muted-foreground uppercase">
-                                                Bawahan Langsung ({idx + 1}/3)
+                                                Bawahan/Rekan ({idx + 1}/3)
                                             </p>
                                             <p className="text-xs sm:text-sm font-semibold text-foreground truncate">
                                                 {email}

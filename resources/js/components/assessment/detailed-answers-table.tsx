@@ -230,7 +230,7 @@ export function DetailedAnswersTable({
                                         Atasan
                                     </TableHead>
                                     <TableHead className="w-24 text-center">
-                                        Bawahan
+                                        Bawahan/Rekan
                                     </TableHead>
                                     <TableHead className="w-28 text-center">
                                         Rata-rata
@@ -271,7 +271,7 @@ export function DetailedAnswersTable({
                                             <TableCell className="text-center">
                                                 {renderScore(
                                                     item.boss_score,
-                                                    "text-emerald-600 dark:text-emerald-400",
+                                                    "text-primary",
                                                 )}
                                             </TableCell>
                                             <TableCell className="text-center">
@@ -312,7 +312,7 @@ export function DetailedAnswersTable({
                                         <TableCell className="text-center">
                                             {renderScore(
                                                 pageAverages.boss,
-                                                "text-emerald-600 dark:text-emerald-400",
+                                                "text-primary",
                                             )}
                                         </TableCell>
                                         <TableCell className="text-center">
@@ -345,7 +345,7 @@ export function DetailedAnswersTable({
                                     <TableCell className="text-center">
                                         {renderScore(
                                             filterSummary.boss,
-                                            "text-emerald-600 dark:text-emerald-400 font-bold",
+                                            "text-primary font-bold",
                                         )}
                                     </TableCell>
                                     <TableCell className="text-center">
@@ -407,12 +407,12 @@ export function DetailedAnswersTable({
                                             </span>
                                             {renderScore(
                                                 item.boss_score,
-                                                "text-emerald-600 dark:text-emerald-400",
+                                                "text-primary",
                                             )}
                                         </div>
                                         <div>
                                             <span className="block text-[10px] text-muted-foreground">
-                                                Bawahan
+                                                Bawahan/Rekan
                                             </span>
                                             {renderScore(
                                                 item.subordinate_score,
@@ -454,12 +454,12 @@ export function DetailedAnswersTable({
                                     </span>
                                     {renderScore(
                                         filterSummary.boss,
-                                        "text-emerald-600 dark:text-emerald-400 font-bold",
+                                        "text-primary font-bold",
                                     )}
                                 </div>
                                 <div>
                                     <span className="block text-[10px] text-muted-foreground">
-                                        Bawahan
+                                        Bawahan/Rekan
                                     </span>
                                     {renderScore(
                                         filterSummary.subordinate,

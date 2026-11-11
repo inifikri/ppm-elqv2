@@ -3,10 +3,11 @@ import {
     Filter,
     History,
     RotateCcw,
+    Settings,
     Shield,
     User as UserIcon,
 } from "lucide-react";
-import { Head, router } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { PageContainer } from "@/components/page-container";
@@ -32,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { index as activityLogsIndex } from "@/routes/admin/activity-logs";
+import { index as retentionIndex } from "@/routes/admin/settings/retention";
 import type { Paginated } from "@/types";
 
 export type ActivityLogItem = {
@@ -66,7 +68,7 @@ function getLogBadgeStyle(logName: string) {
         case "auth":
             return "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border-blue-200";
         case "assessment":
-            return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200";
+            return "bg-primary/10 text-primary border-primary/20";
         case "evaluators":
         case "raters":
             return "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border-purple-200";
@@ -91,6 +93,7 @@ export default function ActivityLogsIndex({
     availableLogNames: string[];
     availableEvents: string[];
 }) {
+    const { auth } = usePage().props;
     const [search, setSearch] = useState(filters.search ?? "");
     const [logName, setLogName] = useState(filters.log_name ?? "all");
     const [event, setEvent] = useState(filters.event ?? "all");
@@ -176,6 +179,16 @@ export default function ActivityLogsIndex({
             <PageHeader
                 title="Activity Log"
                 description="Rekam jejak audit aktivitas pengguna dan operasional sistem ELQ 360°"
+                actions={
+                    auth.can?.manage_settings ? (
+                        <Button variant="outline" size="sm" asChild>
+                            <Link href={retentionIndex().url}>
+                                <Settings className="mr-1.5 h-4 w-4" />
+                                Pengaturan Retensi
+                            </Link>
+                        </Button>
+                    ) : undefined
+                }
             />
 
             {/* Filter Toolbar */}

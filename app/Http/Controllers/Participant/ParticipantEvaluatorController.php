@@ -21,6 +21,10 @@ class ParticipantEvaluatorController extends Controller
     {
         $flow = $flowResolver->resolve($request->user());
 
+        if ($flow['state'] === ParticipantFlowResolver::STATE_ASSESSMENT_RUN) {
+            return to_route('participant.assessment.run');
+        }
+
         if ($flow['state'] !== ParticipantFlowResolver::STATE_SETUP_EVALUATORS) {
             return to_route('dashboard');
         }

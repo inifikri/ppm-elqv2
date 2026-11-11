@@ -101,6 +101,7 @@ export type ParticipantListItem = {
     is_active: boolean;
     email_verified?: boolean;
     is_trashed?: boolean;
+    created_at?: string;
     updated_at: string;
     progress: ParticipantProgress;
 };
@@ -115,6 +116,9 @@ export type ParticipantRaterItem = {
     is_submitted: boolean;
     invitation_status: string;
     invitation_sent_at: string | null;
+    created_at?: string | null;
+    days_pending?: number | null;
+    is_overdue?: boolean;
 };
 
 export type ParticipantDetail = {
@@ -130,4 +134,6 @@ export type ParticipantDetail = {
     created_at: string;
     updated_at: string;
     has_results: boolean;
+    prev_participant?: { id: number; name: string } | null;
+    next_participant?: { id: number; name: string } | null;
 };

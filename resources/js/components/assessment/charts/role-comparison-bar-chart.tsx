@@ -9,47 +9,49 @@ function computeMean(values: (number | null | undefined)[]): number | null {
     return Number((valid.reduce((acc, v) => acc + v, 0) / valid.length).toFixed(2));
 }
 
-export function RoleComparisonBarChart({ dimensions }: { dimensions: DimensionScore[] }) {
+export function RoleComparisonBarChart({ dimensions = [] }: { dimensions?: DimensionScore[] }) {
+    const safeDimensions = Array.isArray(dimensions) ? dimensions : [];
+
     const chartData: ChartData = useMemo(() => {
-        const labels = dimensions.map((d) => d.name);
+        const labels = safeDimensions.map((d) => d.name);
 
         return {
             labels,
             datasets: [
                 {
                     label: 'Diri Sendiri',
-                    data: dimensions.map((d) => d.scores.self ?? 0),
+                    data: safeDimensions.map((d) => d.scores.self ?? 0),
                     backgroundColor: '#6366f1',
                     borderRadius: 4,
                 },
                 {
                     label: 'Atasan',
-                    data: dimensions.map((d) => d.scores.boss ?? 0),
-                    backgroundColor: '#10b981',
+                    data: safeDimensions.map((d) => d.scores.boss ?? 0),
+                    backgroundColor: '#32327f',
                     borderRadius: 4,
                 },
                 {
-                    label: 'Bawahan',
-                    data: dimensions.map((d) => d.scores.subordinate ?? 0),
+                    label: 'Bawahan/Rekan',
+                    data: safeDimensions.map((d) => d.scores.subordinate ?? 0),
                     backgroundColor: '#f59e0b',
                     borderRadius: 4,
                 },
                 {
                     label: 'Rata-rata (Average)',
-                    data: dimensions.map((d) => d.scores.average ?? 0),
+                    data: safeDimensions.map((d) => d.scores.average ?? 0),
                     backgroundColor: '#0ea5e9',
                     borderRadius: 4,
                 },
             ],
         };
-    }, [dimensions]);
+    }, [safeDimensions]);
 
     const chartOptions: ChartOptions = useMemo(() => {
         return {
             scales: {
                 y: {
                     min: 0,
-                    max: 6,
+                    max: 6.6,
                     ticks: { stepSize: 1 },
                 },
             },
@@ -58,8 +60,8 @@ export function RoleComparisonBarChart({ dimensions }: { dimensions: DimensionSc
 
     const accessibleSummary: AccessibleTableData = useMemo(() => {
         return {
-            headers: ['Dimensi', 'Diri Sendiri', 'Atasan', 'Bawahan', 'Rata-rata'],
-            rows: dimensions.map((d) => [
+            headers: ['Dimensi', 'Diri Sendiri', 'Atasan', 'Bawahan/Rekan', 'Rata-rata'],
+            rows: safeDimensions.map((d) => [
                 d.name,
                 d.scores.self,
                 d.scores.boss,
@@ -68,13 +70,13 @@ export function RoleComparisonBarChart({ dimensions }: { dimensions: DimensionSc
             ]),
             footer: [
                 'Rata-rata (Average)',
-                computeMean(dimensions.map((d) => d.scores.self)),
-                computeMean(dimensions.map((d) => d.scores.boss)),
-                computeMean(dimensions.map((d) => d.scores.subordinate)),
-                computeMean(dimensions.map((d) => d.scores.average)),
+                computeMean(safeDimensions.map((d) => d.scores.self)),
+                computeMean(safeDimensions.map((d) => d.scores.boss)),
+                computeMean(safeDimensions.map((d) => d.scores.subordinate)),
+                computeMean(safeDimensions.map((d) => d.scores.average)),
             ],
         };
-    }, [dimensions]);
+    }, [safeDimensions]);
 
     return (
         <ChartCanvas

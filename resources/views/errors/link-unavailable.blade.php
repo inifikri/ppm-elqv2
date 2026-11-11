@@ -1,8 +1,8 @@
 @extends('errors.minimal', [
     'code' => 404,
     'statusText' => 'Not Found',
-    'title' => 'Tautan Tidak Tersedia',
-    'message' => 'Tautan penilaian ini tidak valid, sudah kadaluarsa, atau telah dicabut oleh pengelola asesmen. Silakan hubungi peserta yang meminta penilaian untuk mendapatkan tautan undangan baru.',
+    'title' => 'Tautan Penilaian Tidak Tersedia',
+    'message' => 'Tautan penilaian ini tidak valid, sudah kedaluwarsa, atau telah diperbarui dengan tautan baru oleh pengelola asesmen. Jika Anda menerima email undangan baru baru-baru ini, silakan gunakan tautan pada email terakhir, atau hubungi peserta yang dinilai / panitia asesmen untuk mendapatkan tautan undangan aktif.',
 ])
 
 @section('icon')

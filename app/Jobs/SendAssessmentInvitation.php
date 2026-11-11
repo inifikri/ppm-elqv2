@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\EmailLogStatus;
 use App\Mail\AssessmentInvitationMail;
+use App\Mail\AssessmentReminderMail;
 use App\Models\EmailLog;
 use App\Models\Rater;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,7 +24,8 @@ class SendAssessmentInvitation implements ShouldQueue
 
     public function __construct(
         public Rater $rater,
-        public int $emailLogId
+        public int $emailLogId,
+        public bool $isReminder = false
     ) {}
 
     public function handle(): void
@@ -47,8 +49,11 @@ class SendAssessmentInvitation implements ShouldQueue
                         }
                     }
 
-                    Mail::to($this->rater->email)
-                        ->send(new AssessmentInvitationMail($this->rater));
+                    $mailable = $this->isReminder
+                        ? new AssessmentReminderMail($this->rater)
+                        : new AssessmentInvitationMail($this->rater);
+
+                    Mail::to($this->rater->email)->send($mailable);
 
                     self::$lastSentAt = microtime(true);
                 }

@@ -1,4 +1,5 @@
 import {
+    BellRing,
     Building2,
     CircleQuestionMark,
     History,
@@ -6,6 +7,7 @@ import {
     LayoutGrid,
     Mail,
     Network,
+    Settings,
     Users,
 } from "lucide-react";
 import { Link, usePage } from "@inertiajs/react";
@@ -23,8 +25,10 @@ import { dashboard } from "@/routes";
 import { index as activityLogsIndex } from "@/routes/admin/activity-logs";
 import { index as companiesIndex } from "@/routes/admin/companies";
 import { index as emailLogsIndex } from "@/routes/admin/email-logs";
+import { index as retentionIndex } from "@/routes/admin/settings/retention";
 import { index as domainsIndex } from "@/routes/admin/domains";
 import { index as questionsIndex } from "@/routes/admin/questions";
+import { index as remindersIndex } from "@/routes/admin/reminders";
 import { index as subDomainsIndex } from "@/routes/admin/sub-domains";
 import { index as usersIndex } from "@/routes/admin/users";
 import type { NavGroup } from "@/types";
@@ -47,6 +51,14 @@ export function AppSidebar() {
             icon: Users,
             exact: false,
             badge: toBadge(menuCounts?.participants, "peserta"),
+        });
+
+        assessmentItems.push({
+            title: "Pengingat Penilai",
+            href: remindersIndex(),
+            icon: BellRing,
+            exact: false,
+            badge: toBadge(menuCounts?.overdue_raters, "tertunda"),
         });
     }
 
@@ -107,6 +119,15 @@ export function AppSidebar() {
         });
     }
 
+    if (can.manage_settings) {
+        logItems.push({
+            title: "Retensi Log",
+            href: retentionIndex(),
+            icon: Settings,
+            exact: false,
+        });
+    }
+
     const groups: NavGroup[] = [
         {
             label: "Menu",
@@ -142,7 +163,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href={dashboard()}>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>

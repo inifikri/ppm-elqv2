@@ -36,8 +36,12 @@ class ParticipantController extends Controller
         $companyFilter = $request->query('company');
         $progressFilter = $request->query('progress');
         $statusFilter = $request->query('status');
-        $sort = $request->query('sort', 'name');
-        $direction = $request->query('direction', 'asc') === 'desc' ? 'desc' : 'asc';
+        $sort = $request->query('sort', 'created_at');
+        $direction = $request->query('direction');
+
+        if (! in_array($direction, ['asc', 'desc'], true)) {
+            $direction = in_array($sort, ['name', 'company', 'position'], true) ? 'asc' : 'desc';
+        }
 
         $query = ($tab === 'trash' ? User::onlyTrashed() : User::query())
             ->role(UserRole::Participant->value)
@@ -92,9 +96,11 @@ class ParticipantController extends Controller
                 ->orderBy('pp_sort.position', $direction)
                 ->select('users.*');
         } elseif ($sort === 'updated_at') {
-            $query->orderBy('users.updated_at', $direction);
-        } else {
+            $query->orderBy('users.updated_at', $direction)->orderBy('users.id', $direction);
+        } elseif ($sort === 'name') {
             $query->orderBy('users.name', $direction);
+        } else {
+            $query->orderBy('users.created_at', $direction)->orderBy('users.id', $direction);
         }
 
         $participants = $query->paginate(10)
@@ -121,6 +127,7 @@ class ParticipantController extends Controller
                     'is_active' => $user->is_active,
                     'email_verified' => $user->email_verified_at !== null,
                     'is_trashed' => $user->trashed(),
+                    'created_at' => $user->created_at?->toIso8601String(),
                     'updated_at' => $user->updated_at->toIso8601String(),
                     'progress' => [
                         'self' => $selfSubmitted,
@@ -287,8 +294,13 @@ class ParticipantController extends Controller
                 'created_at' => $act->created_at?->toIso8601String(),
             ]);
 
-        $raters = $participant->raters->map(function (Rater $rater) {
+        $now = now();
+        $raters = $participant->raters->map(function (Rater $rater) use ($now) {
             $latestLog = $rater->emailLogs->first();
+            $daysPending = $rater->isSubmitted()
+                ? null
+                : (int) ($rater->created_at ? $rater->created_at->diffInDays($now) : 0);
+            $isOverdue = ! $rater->isSubmitted() && $daysPending !== null && $daysPending >= 2;
 
             return [
                 'id' => $rater->id,
@@ -300,8 +312,40 @@ class ParticipantController extends Controller
                 'is_submitted' => $rater->isSubmitted(),
                 'invitation_status' => $latestLog?->status?->value ?? ($rater->role === RaterRole::SelfRater ? 'self' : 'not_sent'),
                 'invitation_sent_at' => $latestLog?->sent_at?->toIso8601String(),
+                'created_at' => $rater->created_at?->toIso8601String(),
+                'days_pending' => $daysPending,
+                'is_overdue' => $isOverdue,
             ];
         });
+
+        $isTrashed = $participant->trashed();
+        $baseParticipantQuery = fn () => User::query()
+            ->when($isTrashed, fn ($q) => $q->onlyTrashed(), fn ($q) => $q->withoutTrashed())
+            ->role(UserRole::Participant->value);
+
+        $prevParticipant = $baseParticipantQuery()
+            ->where(function ($q) use ($participant) {
+                $q->where('created_at', '>', $participant->created_at)
+                    ->orWhere(function ($sub) use ($participant) {
+                        $sub->where('created_at', $participant->created_at)
+                            ->where('id', '>', $participant->id);
+                    });
+            })
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->first(['id', 'name']);
+
+        $nextParticipant = $baseParticipantQuery()
+            ->where(function ($q) use ($participant) {
+                $q->where('created_at', '<', $participant->created_at)
+                    ->orWhere(function ($sub) use ($participant) {
+                        $sub->where('created_at', $participant->created_at)
+                            ->where('id', '<', $participant->id);
+                    });
+            })
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->first(['id', 'name']);
 
         return Inertia::render('admin/participants/show', [
             'participant' => [
@@ -317,6 +361,8 @@ class ParticipantController extends Controller
                 'created_at' => $participant->created_at?->toIso8601String(),
                 'updated_at' => $participant->updated_at?->toIso8601String(),
                 'has_results' => $participant->raters->whereNotNull('submitted_at')->count() > 0,
+                'prev_participant' => $prevParticipant ? ['id' => $prevParticipant->id, 'name' => $prevParticipant->name] : null,
+                'next_participant' => $nextParticipant ? ['id' => $nextParticipant->id, 'name' => $nextParticipant->name] : null,
             ],
             'raters' => $raters,
             'activities' => $activities,

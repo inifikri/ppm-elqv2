@@ -1,9 +1,11 @@
 <?php
 
+use App\Models\Answer;
 use App\Models\Company;
 use App\Models\Dimension;
 use App\Models\ParticipantProfile;
 use App\Models\Question;
+use App\Models\Rater;
 use App\Models\SubDimension;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
@@ -92,6 +94,45 @@ it('pertanyaan: CRUD, soft delete, search', function () {
     $this->assertSoftDeleted($q);
 });
 
+it('pertanyaan: edit menampilkan answersCount yang sesuai dan mengizinkan update saat memiliki jawaban (FR-027)', function () {
+    $this->actingAs($this->admin);
+    $sub = SubDimension::factory()->create();
+    $q = Question::factory()->create(['sub_dimension_id' => $sub->id, 'text' => 'Pertanyaan Awal']);
+
+    // Tanpa jawaban
+    $this->get("/admin/questions/{$q->id}/edit")
+        ->assertOk()
+        ->assertInertia(fn (Assert $p) => $p
+            ->component('admin/questions/form')
+            ->where('answersCount', 0)
+            ->where('question.answers_count', 0)
+        );
+
+    // Dengan jawaban
+    $rater = Rater::factory()->create();
+    Answer::factory()->create([
+        'question_id' => $q->id,
+        'rater_id' => $rater->id,
+        'value' => 5,
+    ]);
+
+    $this->get("/admin/questions/{$q->id}/edit")
+        ->assertOk()
+        ->assertInertia(fn (Assert $p) => $p
+            ->component('admin/questions/form')
+            ->where('answersCount', 1)
+            ->where('question.answers_count', 1)
+        );
+
+    // Simpan perubahan diperbolehkan walau sudah memiliki jawaban (FR-027)
+    $this->put("/admin/questions/{$q->id}", [
+        'sub_dimension_id' => $sub->id,
+        'text' => 'Pertanyaan Diperbarui',
+    ])->assertRedirect('/admin/questions');
+
+    expect($q->fresh()->text)->toBe('Pertanyaan Diperbarui');
+});
+
 it('perusahaan: CRUD, nama unik, hapus diblokir bila dipakai peserta', function () {
     $this->actingAs($this->admin);
 
@@ -142,12 +183,12 @@ it('pertanyaan: bulk hapus = soft delete + activity log, hanya admin', function 
         ->and(Activity::where('event', 'deleted')->where('subject_type', Question::class)->count())->toBe(2);
 });
 
-it('pertanyaan: HTML disanitasi (hanya format dasar, tanpa atribut), kosong ditolak', function () {
+it('pertanyaan: HTML dibersihkan menjadi plain text, tag kosong ditolak', function () {
     $this->actingAs($this->admin);
     $sub = SubDimension::factory()->create();
 
     $this->post('/admin/questions', ['sub_dimension_id' => $sub->id, 'text' => '<p onclick="x()">Halo <b>dunia</b><script>alert(1)</script></p>'])->assertRedirect();
-    expect(Question::latest('id')->first()->text)->toBe('<p>Halo <b>dunia</b>alert(1)</p>');
+    expect(Question::latest('id')->first()->text)->toBe('Halo duniaalert(1)');
 
     $this->post('/admin/questions', ['sub_dimension_id' => $sub->id, 'text' => '<p><br></p>'])->assertSessionHasErrors('text');
 });

@@ -39,6 +39,7 @@ class QuestionController extends Controller
             'question' => null,
             'subDomains' => $this->subDomainOptions(),
             'defaultSubDomainId' => $request->integer('sub_dimension_id') ?: null,
+            'answersCount' => 0,
         ]);
     }
 
@@ -57,7 +58,12 @@ class QuestionController extends Controller
     {
         $question->load('subDimension.dimension:id,name');
 
-        return Inertia::render('admin/questions/form', ['question' => $this->row($question), 'subDomains' => $this->subDomainOptions(), 'defaultSubDomainId' => null]);
+        return Inertia::render('admin/questions/form', [
+            'question' => $this->row($question),
+            'subDomains' => $this->subDomainOptions(),
+            'defaultSubDomainId' => null,
+            'answersCount' => $question->answers()->count(),
+        ]);
     }
 
     public function update(QuestionRequest $request, Question $question): RedirectResponse
@@ -93,6 +99,7 @@ class QuestionController extends Controller
             'text' => $q->text,
             'text_plain' => html_entity_decode(strip_tags(str_replace(['</p>', '</li>', '<br>'], ' ', $q->text))),
             'sort_order' => $q->sort_order,
+            'answers_count' => $q->relationLoaded('answers') ? $q->answers->count() : $q->answers()->count(),
         ];
     }
 

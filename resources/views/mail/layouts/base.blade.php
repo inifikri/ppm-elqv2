@@ -39,26 +39,35 @@
                 <table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation" class="container" style="max-width: 580px; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.04);">
                     {{-- Top Accent Line --}}
                     <tr>
-                        <td height="4" style="background-color: #0284c7; line-height: 4px; font-size: 4px;">&nbsp;</td>
+                        <td height="4" style="background-color: #32327f; line-height: 4px; font-size: 4px;">&nbsp;</td>
                     </tr>
 
                     {{-- Header Branding --}}
                     <tr>
-                        <td class="header-cell" style="padding: 28px 32px 20px 32px; border-bottom: 1px solid #f1f5f9;">
+                        <td class="header-cell" style="padding: 24px 32px 20px 32px; border-bottom: 1px solid #f1f5f9;">
                             <table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
                                 <tr>
                                     <td>
-                                        <div style="display: inline-block; vertical-align: middle;">
-                                            <span style="font-size: 19px; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                                                ELQ <span style="color: #0284c7;">360°</span>
-                                            </span>
-                                            <span style="display: inline-block; margin-left: 8px; vertical-align: middle; background-color: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px; border-radius: 9999px;">
-                                                Assessment
-                                            </span>
-                                        </div>
-                                        <div style="margin-top: 3px; font-size: 11px; color: #64748b; font-weight: 500; letter-spacing: -0.01em;">
-                                            Executive Leadership Questionnaire
-                                        </div>
+                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation">
+                                            <tr>
+                                                <td valign="middle" style="padding-right: 14px;">
+                                                    <img src="{{ config('app.url') }}/image/Logo-PPM-01.png" height="32" style="height: 32px; width: auto; display: block; border: 0;" alt="PPM Manajemen" />
+                                                </td>
+                                                <td valign="middle" style="border-left: 1px solid #cbd5e1; padding-left: 14px;">
+                                                    <div style="display: inline-block; vertical-align: middle;">
+                                                        <span style="font-size: 17px; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                                                            ELQ <span style="color: #32327f;">360°</span>
+                                                        </span>
+                                                        <span style="display: inline-block; margin-left: 6px; vertical-align: middle; background-color: #f0f0f8; color: #32327f; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 7px; border-radius: 9999px;">
+                                                            Assessment
+                                                        </span>
+                                                    </div>
+                                                    <div style="margin-top: 2px; font-size: 10.5px; color: #64748b; font-weight: 500; letter-spacing: -0.01em;">
+                                                        Executive Leadership Questionnaire
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </td>
                                     @hasSection('header_extra')
                                         <td align="right" valign="middle">

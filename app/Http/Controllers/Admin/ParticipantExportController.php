@@ -80,7 +80,7 @@ class ParticipantExportController extends Controller
                 'Status Akun',
                 'Self',
                 'Atasan',
-                'Bawahan',
+                'Bawahan/Rekan',
                 'Total Selesai',
                 'Total Penilai',
                 'Status Progres',

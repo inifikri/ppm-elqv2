@@ -17,14 +17,96 @@ use Inertia\Response;
 
 class RaterEvaluationController extends Controller
 {
+    public const PREVIEW_ULID_BOSS = '01JABCDEFGHJKMNPQRSTVWXYZ0';
+
+    public const PREVIEW_ULID_SUBORDINATE = '01JABCDEFGHJKMNPQRSTVWXYZ1';
+
+    protected function isPreviewUlid(string $ulid): bool
+    {
+        return in_array($ulid, [self::PREVIEW_ULID_BOSS, self::PREVIEW_ULID_SUBORDINATE], true);
+    }
+
     /**
      * Tampilkan kuesioner penilaian 360° untuk penilai via tautan ULID (tanpa login).
      */
-    public function show(string $ulid): Response|HttpResponse
+    public function show(Request $request, string $ulid): Response|HttpResponse
     {
+        $cleanUlid = trim(urldecode($ulid));
+
+        // Dukungan mode simulasi interaktif untuk pengujian email template preview
+        if ($this->isPreviewUlid($cleanUlid)) {
+            $isBoss = $cleanUlid === self::PREVIEW_ULID_BOSS;
+            $roleValue = $isBoss ? 'boss' : 'subordinate';
+            $roleLabel = $isBoss ? 'Atasan Langsung' : 'Bawahan/Rekan';
+
+            if ($request->boolean('preview_completed')) {
+                return Inertia::render('evaluator/completed', [
+                    'rater' => [
+                        'ulid' => $cleanUlid,
+                        'role' => $roleValue,
+                        'role_label' => $roleLabel,
+                        'email' => $isBoss ? 'atasan.contoh@perusahaan.co.id' : 'bawahan.contoh@perusahaan.co.id',
+                        'submitted_at' => now()->translatedFormat('d F Y H:i'),
+                    ],
+                    'participant' => [
+                        'name' => 'Budi Pratama, S.T., M.M.',
+                        'company' => 'PT Semen Indonesia (Persero) Tbk',
+                        'position' => 'Senior Vice President of Operations',
+                    ],
+                    'isPreview' => true,
+                ]);
+            }
+
+            $questions = Question::query()
+                ->with(['subDimension.dimension'])
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get();
+
+            if ($questions->isEmpty()) {
+                $questions = collect(range(1, 39))->map(fn ($num) => (object) [
+                    'id' => $num,
+                    'text' => "Contoh butir pernyataan kepemimpinan nomor {$num}.",
+                    'sort_order' => $num,
+                    'subDimension' => (object) [
+                        'name' => 'Sub-Dimensi Contoh',
+                        'dimension' => (object) ['name' => 'Dimensi Kepemimpinan'],
+                    ],
+                ]);
+            }
+
+            $formattedQuestions = $questions->map(fn ($q) => [
+                'id' => $q->id,
+                'text' => $q->text,
+                'sort_order' => $q->sort_order,
+                'sub_dimension_name' => is_object($q->subDimension) ? $q->subDimension?->name : null,
+                'dimension_name' => is_object($q->subDimension?->dimension) ? $q->subDimension?->dimension?->name : null,
+            ]);
+
+            return Inertia::render('evaluator/assessment', [
+                'rater' => [
+                    'ulid' => $cleanUlid,
+                    'role' => $roleValue,
+                    'role_label' => $roleLabel,
+                    'email' => $isBoss ? 'atasan.contoh@perusahaan.co.id' : 'bawahan.contoh@perusahaan.co.id',
+                ],
+                'participant' => [
+                    'name' => 'Budi Pratama, S.T., M.M.',
+                    'company' => 'PT Semen Indonesia (Persero) Tbk',
+                    'position' => 'Senior Vice President of Operations',
+                ],
+                'questions' => $formattedQuestions,
+                'initialAnswers' => [],
+                'initialIndex' => 1,
+                'isPreview' => true,
+            ]);
+        }
+
         $rater = Rater::query()
             ->with(['participant.participantProfile.company'])
-            ->where('ulid', $ulid)
+            ->where('ulid', $cleanUlid)
+            ->orWhere('legacy_code', $cleanUlid)
+            ->orWhereRaw('LOWER(ulid) = ?', [strtolower($cleanUlid)])
             ->first();
 
         if (! $rater) {
@@ -103,7 +185,29 @@ class RaterEvaluationController extends Controller
      */
     public function saveAnswer(Request $request, string $ulid): JsonResponse
     {
-        $rater = Rater::query()->where('ulid', $ulid)->first();
+        $cleanUlid = trim(urldecode($ulid));
+
+        if ($this->isPreviewUlid($cleanUlid)) {
+            $validated = $request->validate([
+                'question_id' => ['required', 'integer'],
+                'value' => ['required', 'integer', 'min:1', 'max:6'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'question_id' => (int) $validated['question_id'],
+                    'value' => (int) $validated['value'],
+                    'saved_at' => now()->toIso8601String(),
+                ],
+            ]);
+        }
+
+        $rater = Rater::query()
+            ->where('ulid', $cleanUlid)
+            ->orWhere('legacy_code', $cleanUlid)
+            ->orWhereRaw('LOWER(ulid) = ?', [strtolower($cleanUlid)])
+            ->first();
 
         if (! $rater) {
             abort(404, 'Tautan penilai tidak ditemukan.');
@@ -146,7 +250,22 @@ class RaterEvaluationController extends Controller
      */
     public function submit(Request $request, string $ulid): RedirectResponse
     {
-        $rater = Rater::query()->where('ulid', $ulid)->first();
+        $cleanUlid = trim(urldecode($ulid));
+
+        if ($this->isPreviewUlid($cleanUlid)) {
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => 'Simulasi penilaian pratinjau berhasil diserahkan.',
+            ]);
+
+            return to_route('rater.evaluation', ['ulid' => $cleanUlid, 'preview_completed' => 1]);
+        }
+
+        $rater = Rater::query()
+            ->where('ulid', $cleanUlid)
+            ->orWhere('legacy_code', $cleanUlid)
+            ->orWhereRaw('LOWER(ulid) = ?', [strtolower($cleanUlid)])
+            ->first();
 
         if (! $rater) {
             abort(404, 'Tautan penilai tidak ditemukan.');

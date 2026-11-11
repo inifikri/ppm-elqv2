@@ -14,17 +14,37 @@ import { UserMenuContent } from '@/components/user-menu-content';
 import { TopbarShell } from '@/components/layout/topbar-shell';
 import { useInitials } from '@/hooks/use-initials';
 import { dashboard } from '@/routes';
+import { cn } from '@/lib/utils';
 import type { BreadcrumbItem } from '@/types';
 
 export default function ParticipantLayout({
     breadcrumbs = [],
+    maxWidth = '5xl',
     children,
 }: {
     breadcrumbs?: BreadcrumbItem[];
+    maxWidth?: '2xl' | '4xl' | '5xl' | '6xl' | '7xl';
     children: React.ReactNode;
 }) {
     const { auth } = usePage().props;
     const getInitials = useInitials();
+
+    const mainMaxWidthClass = {
+        '2xl': 'max-w-2xl',
+        '4xl': 'max-w-4xl',
+        '5xl': 'max-w-5xl',
+        '6xl': 'max-w-6xl',
+        '7xl': 'max-w-7xl',
+    }[maxWidth] ?? 'max-w-5xl';
+
+    const topbarMaxWidth =
+        maxWidth === '6xl' || maxWidth === '7xl'
+            ? '7xl'
+            : maxWidth === '4xl'
+              ? 'xl'
+              : maxWidth === '2xl'
+                ? '2xl'
+                : '5xl';
 
     return (
         <div className="flex min-h-[100dvh] flex-col bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary">
@@ -36,7 +56,7 @@ export default function ParticipantLayout({
             </a>
 
             <TopbarShell
-                maxWidth="2xl"
+                maxWidth={topbarMaxWidth}
                 left={
                     <Link href={dashboard()} className="flex items-center">
                         <AppLogo />
@@ -79,7 +99,10 @@ export default function ParticipantLayout({
 
             <main
                 id="main-content"
-                className="mx-auto w-full max-w-2xl min-w-0 flex-1 px-4 sm:px-6 py-4 sm:py-6 space-y-6"
+                className={cn(
+                    'mx-auto w-full min-w-0 flex-1 px-4 sm:px-6 py-4 sm:py-6 space-y-6',
+                    mainMaxWidthClass
+                )}
             >
                 {breadcrumbs.length > 0 && (
                     <Breadcrumbs breadcrumbs={breadcrumbs} />

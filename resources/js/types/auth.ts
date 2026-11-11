@@ -27,6 +27,7 @@ export type Auth = {
         share_results?: boolean;
         view_activity_log?: boolean;
         manage_email_logs?: boolean;
+        manage_settings?: boolean;
     };
 };
 
@@ -35,4 +36,5 @@ export type MenuCounts = {
     sub_dimensions: number | null;
     questions: number | null;
     participants?: number | null;
+    overdue_raters?: number | null;
 };

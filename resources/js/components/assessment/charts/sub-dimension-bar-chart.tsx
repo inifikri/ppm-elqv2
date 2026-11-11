@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { ChartData, ChartOptions } from 'chart.js';
 import { ChartCanvas, type AccessibleTableData } from './chart-canvas';
-import type { SubDimensionScore } from '@/types/assessment';
+import type { DimensionScore, SubDimensionScore } from '@/types/assessment';
 
 function computeMean(values: (number | null | undefined)[]): number | null {
     const valid = values.filter((v): v is number => v !== null && v !== undefined);
@@ -9,46 +9,62 @@ function computeMean(values: (number | null | undefined)[]): number | null {
     return Number((valid.reduce((acc, v) => acc + v, 0) / valid.length).toFixed(2));
 }
 
+export type SubDimensionBarChartProps = {
+    dimensionName?: string;
+    subDimensions?: SubDimensionScore[];
+    dimensions?: DimensionScore[];
+};
+
 export function SubDimensionBarChart({
     dimensionName,
     subDimensions,
-}: {
-    dimensionName: string;
-    subDimensions: SubDimensionScore[];
-}) {
+    dimensions,
+}: SubDimensionBarChartProps) {
+    const effectiveSubDimensions = useMemo<SubDimensionScore[]>(() => {
+        if (Array.isArray(subDimensions) && subDimensions.length > 0) {
+            return subDimensions;
+        }
+        if (Array.isArray(dimensions) && dimensions.length > 0) {
+            return dimensions.flatMap((d) => d.sub_dimensions ?? []);
+        }
+        return [];
+    }, [subDimensions, dimensions]);
+
+    const titleDimensionName = dimensionName || 'Kompetensi Kepemimpinan';
+
     const chartData: ChartData = useMemo(() => {
-        const labels = subDimensions.map((sd) => sd.name);
+        const labels = effectiveSubDimensions.map((sd) => sd.name);
 
         return {
             labels,
             datasets: [
                 {
                     label: 'Diri Sendiri',
-                    data: subDimensions.map((sd) => sd.scores.self ?? 0),
+                    data: effectiveSubDimensions.map((sd) => sd.scores.self ?? 0),
                     backgroundColor: '#6366f1',
                     borderRadius: 4,
                 },
                 {
                     label: 'Atasan',
-                    data: subDimensions.map((sd) => sd.scores.boss ?? 0),
-                    backgroundColor: '#10b981',
+                    data: effectiveSubDimensions.map((sd) => sd.scores.boss ?? 0),
+                    backgroundColor: '#32327f',
                     borderRadius: 4,
                 },
                 {
-                    label: 'Bawahan',
-                    data: subDimensions.map((sd) => sd.scores.subordinate ?? 0),
+                    label: 'Bawahan/Rekan',
+                    data: effectiveSubDimensions.map((sd) => sd.scores.subordinate ?? 0),
                     backgroundColor: '#f59e0b',
                     borderRadius: 4,
                 },
                 {
                     label: 'Rata-rata (Average)',
-                    data: subDimensions.map((sd) => sd.scores.average ?? 0),
+                    data: effectiveSubDimensions.map((sd) => sd.scores.average ?? 0),
                     backgroundColor: '#0ea5e9',
                     borderRadius: 4,
                 },
             ],
         };
-    }, [subDimensions]);
+    }, [effectiveSubDimensions]);
 
     const chartOptions: ChartOptions = useMemo(() => {
         return {
@@ -56,7 +72,7 @@ export function SubDimensionBarChart({
             scales: {
                 x: {
                     min: 0,
-                    max: 6,
+                    max: 6.8,
                     ticks: { stepSize: 1 },
                 },
             },
@@ -65,8 +81,8 @@ export function SubDimensionBarChart({
 
     const accessibleSummary: AccessibleTableData = useMemo(() => {
         return {
-            headers: ['Sub-Dimensi', 'Diri Sendiri', 'Atasan', 'Bawahan', 'Rata-rata'],
-            rows: subDimensions.map((sd) => [
+            headers: ['Sub-Dimensi', 'Diri Sendiri', 'Atasan', 'Bawahan/Rekan', 'Rata-rata'],
+            rows: effectiveSubDimensions.map((sd) => [
                 sd.name,
                 sd.scores.self,
                 sd.scores.boss,
@@ -74,23 +90,23 @@ export function SubDimensionBarChart({
                 sd.scores.average,
             ]),
             footer: [
-                `Rata-rata ${dimensionName}`,
-                computeMean(subDimensions.map((sd) => sd.scores.self)),
-                computeMean(subDimensions.map((sd) => sd.scores.boss)),
-                computeMean(subDimensions.map((sd) => sd.scores.subordinate)),
-                computeMean(subDimensions.map((sd) => sd.scores.average)),
+                `Rata-rata ${titleDimensionName}`,
+                computeMean(effectiveSubDimensions.map((sd) => sd.scores.self)),
+                computeMean(effectiveSubDimensions.map((sd) => sd.scores.boss)),
+                computeMean(effectiveSubDimensions.map((sd) => sd.scores.subordinate)),
+                computeMean(effectiveSubDimensions.map((sd) => sd.scores.average)),
             ],
         };
-    }, [dimensionName, subDimensions]);
+    }, [titleDimensionName, effectiveSubDimensions]);
 
-    const height = Math.max(280, subDimensions.length * 56);
+    const height = Math.max(280, effectiveSubDimensions.length * 48);
 
     return (
         <ChartCanvas
             type="bar"
             data={chartData}
             options={chartOptions}
-            title={`Grafik horizontal sub-dimensi untuk ${dimensionName}`}
+            title={`Grafik horizontal sub-dimensi untuk ${titleDimensionName}`}
             accessibleSummary={accessibleSummary}
             height={height}
         />

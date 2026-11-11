@@ -25,11 +25,11 @@ export function EvaluatorCard({
     const inputId = isBoss ? 'evaluator-boss-email' : `evaluator-sub-${index}-email`;
     const errorId = `${inputId}-error`;
 
-    const title = isBoss ? 'Atasan Langsung' : `Bawahan ${index}`;
-    const badgeText = isBoss ? 'Atasan (1/1)' : `Bawahan (${index}/3)`;
+    const title = isBoss ? 'Atasan Langsung' : `Bawahan/Rekan ${index}`;
+    const badgeText = isBoss ? 'Atasan (1/1)' : `Bawahan/Rekan (${index}/3)`;
     const hint = isBoss
         ? 'Atasan yang mengamati dan mengevaluasi kinerja kepemimpinan Anda secara langsung.'
-        : `Anggota tim/staf yang berada di bawah supervisi atau koordinasi langsung Anda.`;
+        : `Anggota tim/rekan kerja yang berada di bawah supervisi atau koordinasi Anda.`;
 
     return (
         <Card className="shadow-none border border-border/80 transition-colors focus-within:border-primary/50">
@@ -52,7 +52,7 @@ export function EvaluatorCard({
             <CardContent className="p-4 pt-1 sm:p-5 sm:pt-2">
                 <div className="space-y-1.5">
                     <Label htmlFor={inputId} className="text-xs font-medium">
-                        Alamat Email {isBoss ? 'Atasan' : `Bawahan ${index}`} <span className="text-destructive">*</span>
+                        Alamat Email {isBoss ? 'Atasan' : `Bawahan/Rekan ${index}`} <span className="text-destructive">*</span>
                     </Label>
                     <Input
                         id={inputId}

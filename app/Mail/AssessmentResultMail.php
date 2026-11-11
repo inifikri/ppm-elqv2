@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\User;
+use App\Services\Reports\AssessmentReportData;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
@@ -21,6 +22,8 @@ class AssessmentResultMail extends Mailable
         public User $participant,
         public string $pdfContent,
         ?string $filename = null,
+        public ?AssessmentReportData $reportData = null,
+        public ?string $recipientName = null,
     ) {
         $slug = Str::slug($participant->name) ?: 'peserta';
         $this->filename = $filename ?? ("ELQ-Result_{$slug}_".now()->format('Ymd').'.pdf');
@@ -40,6 +43,8 @@ class AssessmentResultMail extends Mailable
             with: [
                 'participant' => $this->participant,
                 'filename' => $this->filename,
+                'reportData' => $this->reportData,
+                'recipientName' => $this->recipientName,
             ],
         );
     }

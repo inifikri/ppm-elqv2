@@ -40,7 +40,6 @@ export function UserMenuContent({ user, hideProfile = false }: Props) {
                             <Link
                                 className="block w-full cursor-pointer"
                                 href={edit()}
-                                prefetch
                                 onClick={cleanup}
                             >
                                 <Settings className="mr-2" />

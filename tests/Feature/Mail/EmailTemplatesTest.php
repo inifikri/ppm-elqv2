@@ -1,11 +1,13 @@
 <?php
 
+use App\Enums\EffectivenessCategory;
 use App\Enums\RaterRole;
 use App\Mail\AssessmentInvitationMail;
 use App\Mail\AssessmentResultMail;
 use App\Models\ParticipantProfile;
 use App\Models\Rater;
 use App\Models\User;
+use App\Services\Reports\AssessmentReportData;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
@@ -49,8 +51,55 @@ it('template kirim hasil asesmen berhasil di-render dengan lampiran PDF', functi
     $mailable = new AssessmentResultMail($participant, '%PDF-1.4 dummy content');
     $mailable->assertSeeInHtml('Laporan Hasil Asesmen');
     $mailable->assertSeeInHtml('Siti Nurhaliza');
-    $mailable->assertSeeInHtml('hasil-assessment-Siti Nurhaliza.pdf');
+    $mailable->assertSeeInHtml('ELQ-Result_siti-nurhaliza_');
     $mailable->assertSeeInHtml(url('/dashboard'));
+});
+
+it('template kirim hasil asesmen menampilkan kartu skor dan grafik perbandingan dimensi bila reportData diberikan', function () {
+    $participant = User::factory()->participant()->create([
+        'name' => 'Siti Nurhaliza',
+        'email' => 'siti.nurhaliza@example.com',
+    ]);
+
+    $reportData = new AssessmentReportData(
+        participant: [
+            'id' => $participant->id,
+            'name' => $participant->name,
+            'email' => $participant->email,
+            'phone' => '08123456789',
+            'company' => 'PT Semen Indonesia',
+            'position' => 'Manager',
+        ],
+        printedAt: '21 Oktober 2026',
+        hasData: true,
+        answeredRaters: [
+            'self' => ['submitted' => 1, 'total' => 1, 'is_complete' => true],
+            'boss' => ['submitted' => 1, 'total' => 1, 'is_complete' => true],
+            'subordinate' => ['submitted' => 3, 'total' => 3, 'is_complete' => true],
+            'total_submitted' => 5,
+            'total_raters' => 5,
+            'is_all_complete' => true,
+        ],
+        overallScore: 5.25,
+        overallCategory: EffectivenessCategory::fromScore(5.25),
+        roleOverallScores: ['self' => 5.2, 'boss' => 5.3, 'subordinate' => 5.25],
+        dimensions: [
+            [
+                'id' => 1,
+                'name' => 'Task Oriented',
+                'sort_order' => 1,
+                'scores' => ['average' => 5.25, 'self' => 5.2, 'boss' => 5.3, 'subordinate' => 5.25],
+                'category' => EffectivenessCategory::fromScore(5.25),
+                'sub_dimensions' => [],
+            ],
+        ],
+    );
+
+    $mailable = new AssessmentResultMail($participant, '%PDF-1.4', 'laporan.pdf', $reportData);
+    $mailable->assertSeeInHtml('Skor Kepemimpinan Keseluruhan');
+    $mailable->assertSeeInHtml('5.25');
+    $mailable->assertSeeInHtml('Grafik Perbandingan Dimensi Kepemimpinan');
+    $mailable->assertSeeInHtml('Task Oriented');
 });
 
 it('notifikasi reset password menggunakan template custom bernuansa ELQ 360', function () {
@@ -99,7 +148,7 @@ it('admin dapat melihat live preview seluruh template email di browser', functio
     $this->actingAs($this->admin)
         ->get('/admin/email-templates/preview?template=invitation_subordinate')
         ->assertOk()
-        ->assertSee('Rekan Bawahan');
+        ->assertSee('Bawahan/Rekan');
 
     $this->actingAs($this->admin)
         ->get('/admin/email-templates/preview?template=result')

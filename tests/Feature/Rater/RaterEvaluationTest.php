@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Rater;
 
+use App\Http\Controllers\Rater\RaterEvaluationController;
 use App\Models\Answer;
 use App\Models\Question;
 use App\Models\Rater;
@@ -118,4 +119,48 @@ it('berhasil submit saat seluruh 39 pertanyaan telah dijawab', function () {
 
     $response->assertRedirect(route('rater.evaluation', ['ulid' => $this->bossRater->ulid]));
     expect($this->bossRater->fresh()->submitted_at)->not->toBeNull();
+});
+
+it('dapat mengakses kuesioner dengan toleransi spasi atau encoding pada ulid', function () {
+    $encodedUlid = '%20'.$this->bossRater->ulid.'%20';
+    $response = $this->get('/rater/'.$encodedUlid);
+
+    $response->assertOk();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('evaluator/assessment')
+        ->where('rater.ulid', $this->bossRater->ulid)
+    );
+});
+
+it('dapat membuka mode simulasi pratinjau kuesioner menggunakan reserved preview ulid', function () {
+    $previewUlid = RaterEvaluationController::PREVIEW_ULID_BOSS;
+    $response = $this->get(route('rater.evaluation', ['ulid' => $previewUlid]));
+
+    $response->assertOk();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('evaluator/assessment')
+        ->where('isPreview', true)
+        ->where('rater.role', 'boss')
+    );
+});
+
+it('dapat melakukan autosave simulasi dan submit pada mode pratinjau', function () {
+    $previewUlid = RaterEvaluationController::PREVIEW_ULID_BOSS;
+
+    $saveResponse = $this->postJson(route('rater.answers.save', ['ulid' => $previewUlid]), [
+        'question_id' => 1,
+        'value' => 5,
+    ]);
+
+    $saveResponse->assertOk()
+        ->assertJson([
+            'success' => true,
+            'data' => [
+                'question_id' => 1,
+                'value' => 5,
+            ],
+        ]);
+
+    $submitResponse = $this->post(route('rater.submit', ['ulid' => $previewUlid]));
+    $submitResponse->assertRedirect(route('rater.evaluation', ['ulid' => $previewUlid, 'preview_completed' => 1]));
 });

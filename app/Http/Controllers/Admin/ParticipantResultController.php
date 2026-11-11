@@ -32,11 +32,23 @@ class ParticipantResultController extends Controller
     {
         Gate::authorize(PermissionName::ResultsView->value);
 
-        $participant->loadMissing('participantProfile.company');
+        $participant->loadMissing(['participantProfile.company', 'raters']);
         $result = $calculator->calculate($participant);
+
+        $raters = $participant->raters
+            ->filter(fn ($r) => ! empty($r->email))
+            ->values()
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'role' => $r->role->value,
+                'role_label' => $r->role->label(),
+                'email' => $r->email,
+                'is_submitted' => $r->isSubmitted(),
+            ]);
 
         return Inertia::render('admin/participants/result/show', [
             'result' => $result,
+            'raters' => $raters,
         ]);
     }
 
@@ -86,33 +98,65 @@ class ParticipantResultController extends Controller
     }
 
     /**
-     * Jadwalkan pengiriman PDF ke email akun peserta via queue (FR-021).
+     * Jadwalkan pengiriman PDF ke email akun peserta dan/atau penerima pilihan via queue (FR-021).
      */
     public function sendPdf(SendResultPdfRequest $request, User $participant): RedirectResponse
     {
         Gate::authorize(PermissionName::ResultsShare->value);
 
-        // Catat email_logs awal (status: queued, tanpa lampiran/isi jawaban)
-        $emailLog = EmailLog::create([
-            'type' => EmailLogType::ResultShare,
-            'recipient_email' => $participant->email,
-            'user_id' => $participant->id,
-            'status' => EmailLogStatus::Queued,
-            'queued_at' => now(),
-        ]);
+        $participant->loadMissing('raters');
+
+        $recipients = $request->input('recipients');
+        if (empty($recipients) || ! is_array($recipients)) {
+            $recipients = [$participant->email];
+        }
+
+        // Normalisasi dan hilangkan duplikat email yang valid
+        $cleanRecipients = array_values(array_unique(array_filter(
+            array_map(fn ($e) => strtolower(trim((string) $e)), $recipients),
+            fn ($e) => filter_var($e, FILTER_VALIDATE_EMAIL) !== false
+        )));
+
+        if (empty($cleanRecipients)) {
+            return back()->withErrors(['recipients' => 'Minimal pilih atau masukkan satu alamat email penerima yang valid.']);
+        }
+
+        foreach ($cleanRecipients as $targetEmail) {
+            $recipientName = null;
+            if ($targetEmail === strtolower($participant->email)) {
+                $recipientName = $participant->name;
+            } else {
+                $matchedRater = $participant->raters->first(fn ($r) => strtolower((string) $r->email) === $targetEmail);
+                if ($matchedRater) {
+                    $recipientName = $matchedRater->role->label();
+                }
+            }
+
+            // Catat email_logs awal (status: queued, tanpa lampiran/isi jawaban)
+            $emailLog = EmailLog::create([
+                'type' => EmailLogType::ResultShare,
+                'recipient_email' => $targetEmail,
+                'user_id' => $participant->id,
+                'status' => EmailLogStatus::Queued,
+                'queued_at' => now(),
+            ]);
+
+            // Dispatch job ke queue
+            SendAssessmentResultPdfJob::dispatch($participant, $emailLog->id, $targetEmail, $recipientName);
+        }
 
         // Catat audit activity_log (FR-044: tanpa nilai jawaban, token, atau URL bertanda tangan)
         activity('results')
             ->causedBy($request->user())
             ->performedOn($participant)
-            ->log('Kirim PDF hasil assessment ke email peserta');
+            ->log('Kirim PDF hasil assessment ke: '.implode(', ', $cleanRecipients));
 
-        // Dispatch job ke queue
-        SendAssessmentResultPdfJob::dispatch($participant, $emailLog->id);
+        $count = count($cleanRecipients);
+        $summary = $count === 1 ? $cleanRecipients[0] : "{$count} penerima (".implode(', ', $cleanRecipients).')';
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => "Pengiriman PDF hasil assessment ke {$participant->email} berhasil dijadwalkan.",
+            'message' => "Pengiriman PDF hasil assessment ke {$summary} berhasil dijadwalkan.",
         ]);
 
         return back();

@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle2, User, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, User, ShieldCheck, Eye } from 'lucide-react';
 
 interface CompletedProps {
     rater: {
@@ -15,19 +15,29 @@ interface CompletedProps {
         company?: string | null;
         position?: string | null;
     };
+    isPreview?: boolean;
 }
 
-export default function EvaluatorCompleted({ rater, participant }: CompletedProps) {
+export default function EvaluatorCompleted({ rater, participant, isPreview = false }: CompletedProps) {
     return (
         <>
             <Head title="Penilaian Selesai - Evaluasi 360°" />
 
-            <div className="mx-auto max-w-lg py-8 sm:py-12">
+            <div className="mx-auto max-w-lg py-8 sm:py-12 space-y-4">
+                {isPreview && (
+                    <div className="rounded-xl border border-blue-200 bg-blue-50/90 dark:border-blue-900/60 dark:bg-blue-950/40 p-3 sm:p-4 text-xs sm:text-sm text-blue-900 dark:text-blue-200 flex items-start gap-3 shadow-xs">
+                        <Eye className="size-4 sm:size-5 shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" />
+                        <div>
+                            <span className="font-semibold">Mode Simulasi Selesai:</span> Ini adalah tampilan konfirmasi akhir yang akan dilihat oleh penilai setelah menyerahkan kuesioner.
+                        </div>
+                    </div>
+                )}
+
                 <Card className="border border-border/80 bg-card shadow-sm">
                     <CardContent className="flex flex-col items-center p-6 text-center sm:p-8">
                         {/* Success Icon */}
-                        <div className="relative mb-4 flex size-14 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                            <span className="absolute size-full animate-ping rounded-full bg-emerald-500/10 opacity-75 duration-1000" />
+                        <div className="relative mb-4 flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <span className="absolute size-full animate-ping rounded-full bg-primary/10 opacity-75 duration-1000" />
                             <CheckCircle2 className="size-8" />
                         </div>
 
@@ -74,7 +84,7 @@ export default function EvaluatorCompleted({ rater, participant }: CompletedProp
                         </div>
 
                         <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
-                            <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
+                            <ShieldCheck className="size-4 text-primary" />
                             <span>Jawaban Anda telah tersimpan secara aman dan terenkripsi.</span>
                         </div>
                     </CardContent>

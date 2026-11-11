@@ -1,6 +1,6 @@
 <div class="page-break-avoid" style="margin-bottom: 16px;">
     <div class="section-header">
-        <div class="section-title">2. TABEL REKAPITULASI RATA-RATA PER DIMENSI</div>
+        <div class="section-title">TABEL REKAPITULASI RATA-RATA PER DIMENSI</div>
     </div>
     <table class="data-table">
         <thead>
@@ -9,7 +9,7 @@
                 <th style="width: 12%;">Rata-rata</th>
                 <th style="width: 12%;">Diri Sendiri</th>
                 <th style="width: 12%;">Atasan</th>
-                <th style="width: 12%;">Bawahan</th>
+                <th style="width: 12%;">Bawahan/Rekan</th>
                 <th style="width: 14%;">Kategori</th>
             </tr>
         </thead>

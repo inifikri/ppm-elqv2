@@ -38,6 +38,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('participant.')
         ->group(function () {
             Route::get('dashboard', [ParticipantHomeController::class, 'dashboard'])->name('dashboard');
+            Route::get('result/pdf', [ParticipantHomeController::class, 'pdf'])->name('result.pdf');
 
             Route::get('evaluators', [ParticipantEvaluatorController::class, 'create'])->name('evaluators.setup');
             Route::post('evaluators', [ParticipantEvaluatorController::class, 'store'])->name('evaluators.store');

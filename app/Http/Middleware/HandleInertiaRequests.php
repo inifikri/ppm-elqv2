@@ -4,13 +4,15 @@ namespace App\Http\Middleware;
 
 use App\Actions\Dashboard\BuildDashboard;
 use App\Enums\PermissionName;
+use App\Enums\RaterRole;
 use App\Enums\UserRole;
 use App\Models\Dimension;
 use App\Models\Question;
+use App\Models\Rater;
 use App\Models\SubDimension;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -64,10 +66,11 @@ class HandleInertiaRequests extends Middleware
                     'share_results' => (bool) $request->user()?->can(PermissionName::ResultsShare->value),
                     'view_activity_log' => (bool) $request->user()?->can(PermissionName::ActivityLogView->value),
                     'manage_email_logs' => (bool) $request->user()?->can(PermissionName::EmailLogManage->value),
+                    'manage_settings' => (bool) $request->user()?->can(PermissionName::SettingsManage->value),
                 ],
             ],
-            'notifications' => $request->user()?->can(PermissionName::ParticipantsView->value)
-                ? Inertia::defer(fn () => app(BuildDashboard::class)->attentionItems(), rescue: true)
+            'notifications' => fn () => $request->user()?->can(PermissionName::ParticipantsView->value)
+                ? Cache::remember('admin_attention_items', 60, fn () => app(BuildDashboard::class)->attentionItems())
                 : [],
             'menuCounts' => fn () => $this->menuCounts($request),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
@@ -87,11 +90,29 @@ class HandleInertiaRequests extends Middleware
             return null;
         }
 
-        return [
-            'dimensions' => $user->can(PermissionName::DimensionsManage->value) ? Dimension::count() : null,
-            'sub_dimensions' => $user->can(PermissionName::SubDimensionsManage->value) ? SubDimension::count() : null,
-            'questions' => $user->can(PermissionName::QuestionsManage->value) ? Question::count() : null,
-            'participants' => $user->can(PermissionName::ParticipantsView->value) ? User::role(UserRole::Participant->value)->count() : null,
-        ];
+        $cacheKey = sprintf(
+            'menu_counts_%d_%d_%d_%d',
+            (int) $user->can(PermissionName::DimensionsManage->value),
+            (int) $user->can(PermissionName::SubDimensionsManage->value),
+            (int) $user->can(PermissionName::QuestionsManage->value),
+            (int) $user->can(PermissionName::ParticipantsView->value)
+        );
+
+        return Cache::remember($cacheKey, 60, function () use ($user) {
+            return [
+                'dimensions' => $user->can(PermissionName::DimensionsManage->value) ? Dimension::count() : null,
+                'sub_dimensions' => $user->can(PermissionName::SubDimensionsManage->value) ? SubDimension::count() : null,
+                'questions' => $user->can(PermissionName::QuestionsManage->value) ? Question::count() : null,
+                'participants' => $user->can(PermissionName::ParticipantsView->value) ? User::role(UserRole::Participant->value)->count() : null,
+                'overdue_raters' => $user->can(PermissionName::ParticipantsView->value)
+                    ? Rater::query()
+                        ->pending()
+                        ->where('role', '!=', RaterRole::SelfRater)
+                        ->whereNotNull('email')
+                        ->where('created_at', '<', now()->subDays(2))
+                        ->count()
+                    : null,
+            ];
+        });
     }
 }

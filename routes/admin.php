@@ -5,10 +5,12 @@ use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\DimensionController;
 use App\Http\Controllers\Admin\EmailLogController;
 use App\Http\Controllers\Admin\EmailTemplatePreviewController;
+use App\Http\Controllers\Admin\LogRetentionController;
 use App\Http\Controllers\Admin\ParticipantBulkController;
 use App\Http\Controllers\Admin\ParticipantController;
 use App\Http\Controllers\Admin\ParticipantExportController;
 use App\Http\Controllers\Admin\ParticipantRaterController;
+use App\Http\Controllers\Admin\ParticipantReminderController;
 use App\Http\Controllers\Admin\ParticipantResultController;
 use App\Http\Controllers\Admin\QuestionBulkController;
 use App\Http\Controllers\Admin\QuestionController;
@@ -93,10 +95,23 @@ Route::middleware(['auth', 'verified'])
                 ->whereNumber('participant')
                 ->name('participants.raters.resend')
                 ->middleware('can:raters.resend');
+            Route::post('participants/{participant}/raters/{rater}/remind', [ParticipantRaterController::class, 'remind'])
+                ->whereNumber('participant')
+                ->name('participants.raters.remind')
+                ->middleware('can:raters.resend');
             Route::post('participants/{participant}/raters/{rater}/revoke', [ParticipantRaterController::class, 'revoke'])
                 ->whereNumber('participant')
                 ->name('participants.raters.revoke')
                 ->middleware('can:raters.revoke');
+        });
+
+        Route::middleware('can:participants.view')->group(function () {
+            Route::get('reminders', [ParticipantReminderController::class, 'index'])->name('reminders.index');
+        });
+
+        Route::middleware('can:raters.resend')->group(function () {
+            Route::post('reminders/bulk', [ParticipantReminderController::class, 'bulk'])->name('reminders.bulk');
+            Route::post('reminders/{rater}/remind', [ParticipantReminderController::class, 'remind'])->name('reminders.remind');
         });
 
         Route::middleware('can:results.view')->group(function () {
@@ -143,5 +158,11 @@ Route::middleware(['auth', 'verified'])
             Route::post('email-logs/{emailLog}/retry', [EmailLogController::class, 'retry'])->name('email-logs.retry');
             Route::post('email-logs/bulk-retry', [EmailLogController::class, 'bulkRetry'])->name('email-logs.bulk-retry');
             Route::get('email-templates/preview', EmailTemplatePreviewController::class)->name('email-templates.preview');
+        });
+
+        Route::middleware('can:settings.manage')->group(function () {
+            Route::get('settings/retention', [LogRetentionController::class, 'index'])->name('settings.retention.index');
+            Route::put('settings/retention', [LogRetentionController::class, 'update'])->name('settings.retention.update');
+            Route::post('settings/retention/purge', [LogRetentionController::class, 'purge'])->name('settings.retention.purge');
         });
     });

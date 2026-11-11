@@ -22,6 +22,7 @@ import {
     ArrowLeft,
     ArrowRight,
     CheckCircle2,
+    Eye,
     LayoutGrid,
     Send,
     User,
@@ -49,6 +50,7 @@ interface EvaluatorAssessmentProps {
     questions: AssessmentQuestionItem[];
     initialAnswers: Record<string, number>;
     initialIndex?: number;
+    isPreview?: boolean;
 }
 
 export default function EvaluatorAssessment({
@@ -57,6 +59,7 @@ export default function EvaluatorAssessment({
     questions,
     initialAnswers,
     initialIndex = 1,
+    isPreview = false,
 }: EvaluatorAssessmentProps) {
     const startIndex = Math.min(
         Math.max(0, (initialIndex || 1) - 1),
@@ -237,6 +240,16 @@ export default function EvaluatorAssessment({
             />
 
             <div className="space-y-4 pb-24 sm:pb-12">
+                {/* Preview Mode Notification Banner */}
+                {isPreview && (
+                    <div className="rounded-xl border border-blue-200 bg-blue-50/90 dark:border-blue-900/60 dark:bg-blue-950/40 p-3 sm:p-4 text-xs sm:text-sm text-blue-900 dark:text-blue-200 flex items-start gap-3 shadow-xs">
+                        <Eye className="size-4 sm:size-5 shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" />
+                        <div>
+                            <span className="font-semibold">Mode Simulasi Pratinjau:</span> Anda sedang melihat dan menguji kuesioner penilai dari Pratinjau Template Email. Jawaban dapat diisi secara interaktif untuk simulasi dan tidak akan disimpan ke basis data permanen.
+                        </div>
+                    </div>
+                )}
+
                 {/* Participant Context Banner */}
                 <div className="rounded-xl border border-border/70 bg-card p-3 sm:p-4 shadow-xs">
                     <div className="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
@@ -343,7 +356,6 @@ export default function EvaluatorAssessment({
                                 variant="default"
                                 size="default"
                                 icon={Send}
-                                className="bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500"
                                 disabled={!isAllAnswered || isSubmitting}
                                 onClick={() => setConfirmSubmitOpen(true)}
                             >
@@ -363,7 +375,7 @@ export default function EvaluatorAssessment({
                             icon={CheckCircle2}
                             onClick={() => setConfirmSubmitOpen(true)}
                             disabled={isSubmitting}
-                            className="text-xs text-emerald-600 dark:text-emerald-400"
+                            className="text-xs text-primary font-medium"
                         >
                             Semua soal terjawab · Kirim sekarang
                         </Button>
@@ -397,7 +409,6 @@ export default function EvaluatorAssessment({
                             icon={Send}
                             disabled={isSubmitting}
                             onClick={handleFinalSubmit}
-                            className="bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500"
                         >
                             {isSubmitting
                                 ? "Mengirimkan..."

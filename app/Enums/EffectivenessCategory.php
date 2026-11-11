@@ -47,10 +47,10 @@ enum EffectivenessCategory: string
     public function scoreRange(): string
     {
         return match ($this) {
-            self::HighlyEffective => '≥ 5.7',
+            self::HighlyEffective => '> 5.7',
             self::Effective => '4.5 – 5.6',
             self::ModerateEffective => '3.6 – 4.4',
-            self::LeastEffective => '≤ 3.5',
+            self::LeastEffective => '< 3.5',
         };
     }
 

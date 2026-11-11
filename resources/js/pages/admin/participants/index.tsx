@@ -79,6 +79,8 @@ export default function ParticipantsIndex({
     const [progress, setProgress] = useState(filters.progress || "all");
     const [status, setStatus] = useState(filters.status || "all");
     const [tab, setTab] = useState(filters.tab || "all");
+    const [sort, setSort] = useState(filters.sort || "created_at");
+    const [direction, setDirection] = useState(filters.direction || "desc");
     const [selected, setSelected] = useState<Set<number>>(new Set());
     const [loading, setLoading] = useState(false);
     const [target, setTarget] = useState<ParticipantListItem | null>(null);
@@ -86,8 +88,21 @@ export default function ParticipantsIndex({
     const [forceDeleteTarget, setForceDeleteTarget] = useState<ParticipantListItem | null>(null);
 
     const isTrash = tab === "trash";
+    const sortValue = `${sort}-${direction}`;
+
+    const handleSortChange = (val: string) => {
+        const [newSort, newDir] = val.split("-");
+        setSort(newSort);
+        setDirection(newDir);
+        applyFilters({ sort: newSort, direction: newDir });
+    };
 
     const applyFilters = (newFilters: Partial<Filters>) => {
+        const nextSort =
+            newFilters.sort !== undefined ? newFilters.sort : sort;
+        const nextDirection =
+            newFilters.direction !== undefined ? newFilters.direction : direction;
+
         router.get(
             "/admin/participants",
             {
@@ -119,6 +134,8 @@ export default function ParticipantsIndex({
                         : tab) === "all"
                         ? undefined
                         : (newFilters.tab ?? tab),
+                sort: nextSort,
+                direction: nextDirection,
             },
             {
                 preserveState: true,
@@ -249,6 +266,8 @@ export default function ParticipantsIndex({
         if (progress !== "all") params.set("progress", progress);
         if (status !== "all") params.set("status", status);
         if (tab !== "all") params.set("tab", tab);
+        if (sort) params.set("sort", sort);
+        if (direction) params.set("direction", direction);
         return `/admin/participants/export?${params.toString()}`;
     };
 
@@ -259,6 +278,8 @@ export default function ParticipantsIndex({
         if (filters.progress) params.set("progress", filters.progress);
         if (filters.status) params.set("status", filters.status);
         if (filters.tab) params.set("tab", filters.tab);
+        if (filters.sort) params.set("sort", filters.sort);
+        if (filters.direction) params.set("direction", filters.direction);
         params.set("page", String(page));
         return `/admin/participants?${params.toString()}`;
     };
@@ -301,7 +322,7 @@ export default function ParticipantsIndex({
             </div>
 
             {/* Filter Toolbar */}
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <SearchInput
                     label="Cari peserta"
                     placeholder="Cari nama, email, jabatan..."
@@ -362,6 +383,37 @@ export default function ParticipantsIndex({
                         <SelectItem value="active">Aktif</SelectItem>
                         <SelectItem value="inactive">Nonaktif</SelectItem>
                         <SelectItem value="unverified">Belum Terverifikasi</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Select
+                    value={sortValue}
+                    onValueChange={handleSortChange}
+                >
+                    <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Urutkan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="created_at-desc">
+                            Terbaru Ditambahkan
+                        </SelectItem>
+                        <SelectItem value="created_at-asc">
+                            Terlama Ditambahkan
+                        </SelectItem>
+                        <SelectItem value="name-asc">
+                            Nama (A – Z)
+                        </SelectItem>
+                        <SelectItem value="name-desc">
+                            Nama (Z – A)
+                        </SelectItem>
+                        <SelectItem value="company-asc">
+                            Perusahaan (A – Z)
+                        </SelectItem>
+                        <SelectItem value="position-asc">
+                            Jabatan (A – Z)
+                        </SelectItem>
+                        <SelectItem value="updated_at-desc">
+                            Terakhir Diperbarui
+                        </SelectItem>
                     </SelectContent>
                 </Select>
             </div>
@@ -448,6 +500,11 @@ export default function ParticipantsIndex({
                                         <div className="text-xs text-muted-foreground">
                                             {p.email}
                                         </div>
+                                        {p.created_at && (
+                                            <div className="text-[11px] text-muted-foreground/75 mt-0.5">
+                                                Dibuat: {new Date(p.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                                            </div>
+                                        )}
                                     </TableCell>
                                     <TableCell>
                                         <div className="text-sm font-medium">
@@ -468,7 +525,7 @@ export default function ParticipantsIndex({
                                                 className={cn(
                                                     "text-[10px] px-1.5 py-0.5",
                                                     p.progress.self
-                                                        ? "bg-emerald-600 hover:bg-emerald-600 text-white"
+                                                        ? "bg-primary hover:bg-primary text-primary-foreground"
                                                         : "text-muted-foreground",
                                                 )}
                                             >
@@ -488,7 +545,7 @@ export default function ParticipantsIndex({
                                                 className={cn(
                                                     "text-[10px] px-1.5 py-0.5",
                                                     p.progress.boss
-                                                        ? "bg-emerald-600 hover:bg-emerald-600 text-white"
+                                                        ? "bg-primary hover:bg-primary text-primary-foreground"
                                                         : "text-muted-foreground",
                                                 )}
                                             >
@@ -515,11 +572,11 @@ export default function ParticipantsIndex({
                                                         : p.progress.subordinate.submitted ===
                                                             p.progress.subordinate.total &&
                                                           p.progress.subordinate.total > 0
-                                                        ? "bg-emerald-600 hover:bg-emerald-600 text-white"
+                                                        ? "bg-primary hover:bg-primary text-primary-foreground"
                                                         : "text-muted-foreground",
                                                 )}
                                             >
-                                                Bawahan{" "}
+                                                Bawahan/Rekan{" "}
                                                 {
                                                     p.progress.subordinate
                                                         .submitted
@@ -660,6 +717,11 @@ export default function ParticipantsIndex({
                                             <p className="text-xs text-muted-foreground">
                                                 {p.email}
                                             </p>
+                                            {p.created_at && (
+                                                <p className="text-[11px] text-muted-foreground/75 mt-0.5">
+                                                    Dibuat: {new Date(p.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
                                     {p.email_verified === false ? (
@@ -699,7 +761,7 @@ export default function ParticipantsIndex({
                                         className={cn(
                                             "text-[10px] px-1.5 py-0.5",
                                             p.progress.self
-                                                ? "bg-emerald-600 text-white"
+                                                ? "bg-primary text-primary-foreground"
                                                 : "text-muted-foreground",
                                         )}
                                     >
@@ -715,7 +777,7 @@ export default function ParticipantsIndex({
                                         className={cn(
                                             "text-[10px] px-1.5 py-0.5",
                                             p.progress.boss
-                                                ? "bg-emerald-600 text-white"
+                                                ? "bg-primary text-primary-foreground"
                                                 : "text-muted-foreground",
                                         )}
                                     >
@@ -737,11 +799,11 @@ export default function ParticipantsIndex({
                                                 : p.progress.subordinate.submitted ===
                                                     p.progress.subordinate.total &&
                                                   p.progress.subordinate.total > 0
-                                                ? "bg-emerald-600 text-white"
+                                                ? "bg-primary text-primary-foreground"
                                                 : "text-muted-foreground",
                                         )}
                                     >
-                                        Bawahan:{" "}
+                                        Bawahan/Rekan:{" "}
                                         {p.progress.subordinate.submitted}/
                                         {p.progress.subordinate.total}
                                     </Badge>

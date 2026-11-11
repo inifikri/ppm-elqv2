@@ -7,7 +7,7 @@ use App\Enums\RaterRole;
 class ResultChartRenderer
 {
     /**
-     * Render SVG Radar Chart untuk 3 Dimensi (Self, Atasan, Bawahan).
+     * Render SVG Radar Chart untuk 3 Dimensi (Self, Atasan, Bawahan/Rekan).
      *
      * @param  list<array{id: int, name: string, scores: array{self: float|null, boss: float|null, subordinate: float|null, average: float|null}}>  $dimensions
      */
@@ -117,7 +117,7 @@ class ResultChartRenderer
                 'strokeWidth' => 2,
             ],
             RaterRole::Subordinate->value => [
-                'label' => 'Bawahan',
+                'label' => 'Bawahan/Rekan',
                 'fill' => 'rgba(245, 158, 11, 0.25)',
                 'stroke' => '#d97706',
                 'strokeWidth' => 2,
@@ -173,7 +173,7 @@ class ResultChartRenderer
         $items = [
             ['label' => 'Diri Sendiri', 'color' => '#4f46e5'],
             ['label' => 'Atasan', 'color' => '#059669'],
-            ['label' => 'Bawahan', 'color' => '#d97706'],
+            ['label' => 'Bawahan/Rekan', 'color' => '#d97706'],
         ];
 
         $startX = 110;

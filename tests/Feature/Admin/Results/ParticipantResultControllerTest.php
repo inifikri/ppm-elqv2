@@ -172,6 +172,30 @@ it('sendPdf: job ter-queue, hanya ke email akun peserta, email_logs terisi, acti
         ->and($activity->properties->toArray())->toBeEmpty(); // Tanpa nilai jawaban / payload rahasia
 });
 
+it('sendPdf: dapat mengirimkan laporan pdf ke banyak penerima yang dipilih user', function () {
+    Queue::fake();
+
+    $bossEmail = 'boss@example.com';
+    $customEmail = 'hrd@perusahaan.co.id';
+    $recipients = [$this->participant->email, $bossEmail, $customEmail];
+
+    $response = $this->actingAs($this->admin)
+        ->post("/admin/participants/{$this->participant->id}/result/send-pdf", [
+            'recipients' => $recipients,
+        ]);
+
+    $response->assertRedirect();
+    $response->assertSessionHasNoErrors();
+
+    // Verifikasi 3 job ter-push
+    Queue::assertPushed(SendAssessmentResultPdfJob::class, 3);
+
+    // Verifikasi masing-masing email_logs terisi
+    foreach ($recipients as $email) {
+        expect(EmailLog::where('recipient_email', $email)->where('user_id', $this->participant->id)->exists())->toBeTrue();
+    }
+});
+
 it('job send assessment pdf: menghasilkan pdf di memori, mengirim mailable, dan update status email_logs menjadi sent', function () {
     Mail::fake();
 

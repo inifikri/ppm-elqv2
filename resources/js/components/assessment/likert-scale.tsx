@@ -27,7 +27,7 @@ export function LikertScale({
         <div
             role="radiogroup"
             aria-label="Skala persetujuan 1 sampai 6"
-            className="flex flex-col gap-2.5"
+            className="flex flex-col gap-2.5 w-full"
         >
             {LIKERT_OPTIONS.map((opt) => {
                 const isSelected = value === opt.value;
@@ -43,45 +43,46 @@ export function LikertScale({
                         disabled={disabled}
                         onClick={() => onChange(opt.value)}
                         className={cn(
-                            'group relative flex min-h-[48px] w-full items-center justify-between rounded-xl border p-3.5 text-left text-sm transition-all sm:px-4',
+                            'group relative flex min-h-[48px] sm:min-h-[52px] w-full items-center justify-between rounded-xl border p-3.5 sm:px-4 text-left transition-all',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
                             isSelected
-                                ? 'border-primary bg-primary/10 font-semibold text-primary shadow-xs'
-                                : 'border-border/80 bg-card hover:border-border hover:bg-muted/40 text-foreground',
+                                ? 'border-primary bg-primary/10 font-semibold text-primary shadow-xs ring-1 ring-primary/30'
+                                : 'border-border/80 bg-card hover:border-primary/40 hover:bg-muted/40 text-foreground',
                             disabled && 'cursor-not-allowed opacity-60'
                         )}
                     >
-                        <div className="flex items-center gap-3">
+                        {/* Lingkaran nomor dan label jawaban (vertikal baris berurutan) */}
+                        <div className="flex items-center gap-3 sm:gap-3.5">
                             <span
                                 className={cn(
-                                    'flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors',
+                                    'flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-full text-xs sm:text-sm font-semibold transition-colors',
                                     isSelected
                                         ? 'bg-primary text-primary-foreground'
-                                        : 'bg-muted text-muted-foreground group-hover:bg-muted/80'
+                                        : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
                                 )}
                             >
                                 {opt.value}
                             </span>
-                            <span className="text-sm font-medium leading-normal">
+                            <span className="text-sm sm:text-base font-medium leading-normal">
                                 {opt.label}
                             </span>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            {/* Keyboard hint badge on desktop */}
+                        {/* Indikator terpilih dan keyboard shortcut di desktop */}
+                        <div className="flex items-center gap-2.5">
                             <span
                                 className={cn(
-                                    'hidden text-[11px] font-mono px-1.5 py-0.5 rounded border sm:inline-block',
+                                    'hidden sm:inline-flex text-[11px] font-mono px-2 py-0.5 rounded border transition-colors',
                                     isSelected
-                                        ? 'border-primary/40 text-primary bg-primary/10'
-                                        : 'border-muted-foreground/20 text-muted-foreground/60'
+                                        ? 'border-primary/40 text-primary bg-primary/15'
+                                        : 'border-muted-foreground/20 text-muted-foreground/60 group-hover:text-foreground'
                                 )}
                             >
-                                {opt.value}
+                                [{opt.value}]
                             </span>
                             {isSelected && (
-                                <div className="flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                    <Check className="size-3 stroke-[3]" />
+                                <div className="flex size-5 sm:size-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                    <Check className="size-3 sm:size-3.5 stroke-[3]" />
                                 </div>
                             )}
                         </div>

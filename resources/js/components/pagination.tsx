@@ -19,10 +19,15 @@ export default function Pagination({
     paginator,
     pageUrl,
 }: {
-    paginator: Paginated<unknown>;
-    pageUrl: (page: number) => string;
+    paginator?: Paginated<unknown> | null;
+    pageUrl?: (page: number) => string;
 }) {
+    if (!paginator) {
+        return null;
+    }
+
     const { current_page, last_page, from, to, total } = paginator;
+    const getUrl = pageUrl ?? ((p: number) => `?page=${p}`);
 
     return (
         <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
@@ -65,7 +70,7 @@ export default function Pagination({
                                 }
                             >
                                 <Link
-                                    href={pageUrl(p)}
+                                    href={getUrl(p)}
                                     preserveScroll
                                     aria-current={
                                         p === current_page ? 'page' : undefined

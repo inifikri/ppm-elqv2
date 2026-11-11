@@ -400,3 +400,53 @@ test('updating rater email to participant email is rejected', function () {
 
     expect($rater->fresh()->email)->toBe('boss@example.com');
 });
+
+test('admin can send reminder email to pending rater', function () {
+    Queue::fake();
+
+    $admin = User::factory()->admin()->create();
+    $participant = User::factory()->participant()->create();
+
+    $rater = Rater::factory()->create([
+        'participant_id' => $participant->id,
+        'role' => RaterRole::Boss,
+        'email' => 'boss.remind@example.com',
+        'submitted_at' => null,
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('admin.participants.raters.remind', [$participant, $rater]))
+        ->assertRedirect();
+
+    Queue::assertPushed(SendAssessmentInvitation::class, function (SendAssessmentInvitation $job) use ($rater) {
+        return $job->rater->id === $rater->id && $job->isReminder === true;
+    });
+});
+
+test('participant show provides previous and next navigation and overdue rater info', function () {
+    $admin = User::factory()->admin()->create();
+
+    $p1 = User::factory()->participant()->create(['created_at' => now()->subDays(3)]);
+    $p2 = User::factory()->participant()->create(['created_at' => now()->subDays(2)]);
+    $p3 = User::factory()->participant()->create(['created_at' => now()->subDay()]);
+
+    $overdueRater = Rater::factory()->create([
+        'participant_id' => $p2->id,
+        'role' => RaterRole::Boss,
+        'email' => 'boss.overdue@example.com',
+        'created_at' => now()->subDays(3),
+        'submitted_at' => null,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.participants.show', $p2))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/participants/show')
+            ->where('participant.id', $p2->id)
+            ->where('participant.prev_participant.id', $p3->id)
+            ->where('participant.next_participant.id', $p1->id)
+            ->where('raters.0.is_overdue', true)
+            ->where('raters.0.days_pending', 3)
+        );
+});

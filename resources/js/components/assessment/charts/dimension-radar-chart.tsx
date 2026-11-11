@@ -9,16 +9,18 @@ function computeMean(values: (number | null | undefined)[]): number | null {
     return Number((valid.reduce((acc, v) => acc + v, 0) / valid.length).toFixed(2));
 }
 
-export function DimensionRadarChart({ dimensions }: { dimensions: DimensionScore[] }) {
+export function DimensionRadarChart({ dimensions = [] }: { dimensions?: DimensionScore[] }) {
+    const safeDimensions = Array.isArray(dimensions) ? dimensions : [];
+
     const chartData: ChartData = useMemo(() => {
-        const labels = dimensions.map((d) => d.name);
+        const labels = safeDimensions.map((d) => d.name);
 
         return {
             labels,
             datasets: [
                 {
                     label: 'Diri Sendiri (Self)',
-                    data: dimensions.map((d) => d.scores.self ?? 0),
+                    data: safeDimensions.map((d) => d.scores.self ?? 0),
                     borderColor: '#6366f1',
                     backgroundColor: 'rgba(99, 102, 241, 0.22)',
                     borderWidth: 2,
@@ -27,16 +29,16 @@ export function DimensionRadarChart({ dimensions }: { dimensions: DimensionScore
                 },
                 {
                     label: 'Atasan (Boss)',
-                    data: dimensions.map((d) => d.scores.boss ?? 0),
-                    borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.22)',
+                    data: safeDimensions.map((d) => d.scores.boss ?? 0),
+                    borderColor: '#32327f',
+                    backgroundColor: 'rgba(50, 50, 127, 0.22)',
                     borderWidth: 2,
-                    pointBackgroundColor: '#10b981',
+                    pointBackgroundColor: '#32327f',
                     pointRadius: 3,
                 },
                 {
-                    label: 'Bawahan (Subordinate)',
-                    data: dimensions.map((d) => d.scores.subordinate ?? 0),
+                    label: 'Bawahan/Rekan (Subordinate/Peer)',
+                    data: safeDimensions.map((d) => d.scores.subordinate ?? 0),
                     borderColor: '#f59e0b',
                     backgroundColor: 'rgba(245, 158, 11, 0.22)',
                     borderWidth: 2,
@@ -45,7 +47,7 @@ export function DimensionRadarChart({ dimensions }: { dimensions: DimensionScore
                 },
                 {
                     label: 'Rata-rata (Average)',
-                    data: dimensions.map((d) => d.scores.average ?? 0),
+                    data: safeDimensions.map((d) => d.scores.average ?? 0),
                     borderColor: '#0ea5e9',
                     backgroundColor: 'rgba(14, 165, 233, 0.16)',
                     borderWidth: 2.5,
@@ -55,12 +57,12 @@ export function DimensionRadarChart({ dimensions }: { dimensions: DimensionScore
                 },
             ],
         };
-    }, [dimensions]);
+    }, [safeDimensions]);
 
     const accessibleSummary: AccessibleTableData = useMemo(() => {
         return {
-            headers: ['Dimensi', 'Diri Sendiri', 'Atasan', 'Bawahan', 'Rata-rata'],
-            rows: dimensions.map((d) => [
+            headers: ['Dimensi', 'Diri Sendiri', 'Atasan', 'Bawahan/Rekan', 'Rata-rata'],
+            rows: safeDimensions.map((d) => [
                 d.name,
                 d.scores.self,
                 d.scores.boss,
@@ -69,13 +71,13 @@ export function DimensionRadarChart({ dimensions }: { dimensions: DimensionScore
             ]),
             footer: [
                 'Rata-rata (Average)',
-                computeMean(dimensions.map((d) => d.scores.self)),
-                computeMean(dimensions.map((d) => d.scores.boss)),
-                computeMean(dimensions.map((d) => d.scores.subordinate)),
-                computeMean(dimensions.map((d) => d.scores.average)),
+                computeMean(safeDimensions.map((d) => d.scores.self)),
+                computeMean(safeDimensions.map((d) => d.scores.boss)),
+                computeMean(safeDimensions.map((d) => d.scores.subordinate)),
+                computeMean(safeDimensions.map((d) => d.scores.average)),
             ],
         };
-    }, [dimensions]);
+    }, [safeDimensions]);
 
     return (
         <ChartCanvas

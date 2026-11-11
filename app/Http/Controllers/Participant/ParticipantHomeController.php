@@ -6,8 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\EmailLog;
 use App\Models\Question;
 use App\Services\Participant\ParticipantFlowResolver;
+use App\Services\Reports\AssessmentPdfGenerator;
+use App\Services\Reports\AssessmentReportBuilder;
+use App\Services\Scoring\ScoreCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,7 +28,7 @@ class ParticipantHomeController extends Controller
         return match ($flow['state']) {
             ParticipantFlowResolver::STATE_SETUP_EVALUATORS => to_route('participant.evaluators.setup'),
             ParticipantFlowResolver::STATE_ASSESSMENT_RUN => to_route('participant.assessment.run'),
-            ParticipantFlowResolver::STATE_COMPLETED => $this->dashboard($request, $flowResolver),
+            ParticipantFlowResolver::STATE_COMPLETED => $this->dashboard($request, $flowResolver, app(ScoreCalculator::class)),
             default => to_route('participant.evaluators.setup'),
         };
     }
@@ -31,8 +36,11 @@ class ParticipantHomeController extends Controller
     /**
      * Halaman Dashboard Peserta (hanya bisa dibuka bila self sudah submit).
      */
-    public function dashboard(Request $request, ParticipantFlowResolver $flowResolver): Response|RedirectResponse
-    {
+    public function dashboard(
+        Request $request,
+        ParticipantFlowResolver $flowResolver,
+        ScoreCalculator $calculator,
+    ): Response|RedirectResponse {
         $user = $request->user();
         $flow = $flowResolver->resolve($user);
 
@@ -71,6 +79,9 @@ class ParticipantHomeController extends Controller
         $totalSubmitted = ($bossStatus && $bossStatus['is_submitted'] ? 1 : 0)
             + count(array_filter($subordinatesStatus, fn ($s) => $s['is_submitted']));
 
+        // Hitung hasil assessment peserta (FR-017 s.d. FR-020)
+        $result = $calculator->calculate($user);
+
         return Inertia::render('participant/dashboard', [
             'participant' => [
                 'name' => $user->name,
@@ -89,6 +100,34 @@ class ParticipantHomeController extends Controller
                 'total_invited' => $totalInvited,
                 'total_submitted' => $totalSubmitted,
             ],
+            'result' => $result,
         ]);
+    }
+
+    /**
+     * Download laporan PDF on-demand oleh peserta (FR-022).
+     */
+    public function pdf(
+        Request $request,
+        AssessmentReportBuilder $reportBuilder,
+        AssessmentPdfGenerator $pdfGenerator,
+    ): HttpResponse|RedirectResponse {
+        $user = $request->user();
+        $reportData = $reportBuilder->build($user);
+
+        if (! $reportData->hasData) {
+            return back()->with('error', 'Belum ada data penilaian yang selesai untuk diunduh.');
+        }
+
+        // Catat audit activity_log (FR-044)
+        activity('results')
+            ->causedBy($user)
+            ->performedOn($user)
+            ->log('Download PDF hasil assessment oleh peserta');
+
+        $slug = Str::slug($user->name) ?: 'peserta';
+        $filename = "ELQ-Hasil-Asesmen_{$slug}_".now()->format('Ymd').'.pdf';
+
+        return $pdfGenerator->downloadResponse($reportData, $filename);
     }
 }

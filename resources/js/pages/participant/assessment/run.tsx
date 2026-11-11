@@ -266,7 +266,7 @@ export default function AssessmentRun({
                                     size="lg"
                                     onClick={() => setConfirmSubmitOpen(true)}
                                     disabled={!isAllAnswered || isSubmitting}
-                                    className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    className="gap-1.5"
                                 >
                                     <CheckCircle2 className="size-4" />
                                     <span>Selesai &amp; Kirim</span>

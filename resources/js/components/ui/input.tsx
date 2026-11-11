@@ -20,8 +20,9 @@ function Input({
       type={type}
       data-slot="input"
       className={cn(
-        "border-border dark:border-input shadow-sm file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex h-field pointer-coarse:h-touch w-full min-w-0 rounded-control border bg-surface hover:border-ring/60 px-3 py-1 text-sm transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-        "focus-visible:border-ring focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "border-border dark:border-input shadow-xs file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex h-field pointer-coarse:h-touch w-full min-w-0 rounded-control border bg-surface px-3 py-1 text-sm transition-[color,box-shadow,border-color] duration-150 outline-none focus:outline-none focus-visible:outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+        "hover:border-ring/60",
+        "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:ring-offset-0",
         "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
         Icon && "pl-9",
         trailing && "pr-10",

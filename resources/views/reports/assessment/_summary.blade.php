@@ -42,9 +42,9 @@
             </div>
         </td>
 
-        {{-- Bawahan (Subordinate) --}}
+        {{-- Bawahan/Rekan (Subordinate/Peer) --}}
         <td class="score-card" style="width: 23%;">
-            <div class="score-title" style="color: #b45309;">Bawahan (Subordinate)</div>
+            <div class="score-title" style="color: #b45309;">Bawahan/Rekan (Subordinate/Peer)</div>
             <div class="score-big" style="color: #d97706;">
                 {{ $data->roleOverallScores['subordinate'] !== null ? number_format($data->roleOverallScores['subordinate'], 2) : '-' }}
             </div>

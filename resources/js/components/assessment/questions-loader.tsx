@@ -158,7 +158,7 @@ export function QuestionsLoader({
                                             className={cn(
                                                 'size-4 shrink-0 transition-colors duration-300',
                                                 isChecked
-                                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                                    ? 'text-primary'
                                                     : 'text-muted-foreground/30'
                                             )}
                                         />
