@@ -21,7 +21,8 @@ export function ThemeToggle() {
                     aria-label={label}
                     onClick={() => updateAppearance(isDark ? 'light' : 'dark')}
                 >
-                    {isDark ? <Sun /> : <Moon />}
+                    <Sun className="hidden dark:block" />
+                    <Moon className="block dark:hidden" />
                 </Button>
             </TooltipTrigger>
             <TooltipContent>{label}</TooltipContent>

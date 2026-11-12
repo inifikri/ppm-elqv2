@@ -34,6 +34,7 @@ export function RecentActivity({
                                 </p>
                                 <time
                                     dateTime={item.at}
+                                    suppressHydrationWarning
                                     className="shrink-0 text-xs text-muted-foreground"
                                 >
                                     {formatRelativeTime(item.at)}

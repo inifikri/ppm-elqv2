@@ -18,6 +18,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\Activitylog\Models\Activity;
 
 class UserController extends Controller
 {
@@ -26,21 +27,81 @@ class UserController extends Controller
         Gate::authorize('viewAny', User::class);
 
         $me = $request->user()->id;
+        $filters = $request->validated();
 
         return Inertia::render('admin/users/index', [
-            'users' => $list->handle($request->validated('search'))->through(fn (User $user) => [
+            'users' => $list->handle($filters)->through(fn (User $user) => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'phone' => $user->phone,
                 'is_active' => $user->is_active,
                 'role' => $user->roles->first()?->name,
-                'company' => $user->participantProfile?->company->name,
-                'position' => $user->participantProfile?->position,
                 'email_verified' => $user->email_verified_at !== null,
                 'can_delete' => $user->id !== $me,
+                'is_trashed' => $user->trashed(),
             ]),
-            'filters' => ['search' => $request->validated('search') ?? ''],
+            'filters' => [
+                'search' => $filters['search'] ?? '',
+                'role' => $filters['role'] ?? '',
+                'status' => $filters['status'] ?? '',
+                'tab' => $filters['tab'] ?? 'all',
+            ],
+            'trash_count' => User::onlyTrashed()->count(),
+        ]);
+    }
+
+    public function show(User $user): Response
+    {
+        Gate::authorize('view', $user);
+
+        $user->loadMissing('roles', 'participantProfile.company');
+
+        $activities = Activity::query()
+            ->with('causer')
+            ->where(function ($q) use ($user) {
+                $q->where(function ($sub) use ($user) {
+                    $sub->where('subject_type', $user->getMorphClass())
+                        ->where('subject_id', $user->id);
+                })->orWhere(function ($sub) use ($user) {
+                    $sub->where('causer_type', $user->getMorphClass())
+                        ->where('causer_id', $user->id);
+                });
+            })
+            ->latest()
+            ->paginate(15)
+            ->through(fn (Activity $act) => [
+                'id' => $act->id,
+                'description' => $act->description,
+                'log_name' => $act->log_name,
+                'causer_name' => $act->causer?->name ?? 'Sistem',
+                'created_at' => $act->created_at?->toIso8601String(),
+            ]);
+
+        $me = auth()->id();
+
+        return Inertia::render('admin/users/show', [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'avatar' => $user->avatar,
+                'is_active' => $user->is_active,
+                'role' => $user->roles->first()?->name,
+                'email_verified' => $user->email_verified_at !== null,
+                'email_verified_at' => $user->email_verified_at?->toIso8601String(),
+                'last_login_at' => $user->last_login_at?->toIso8601String(),
+                'created_at' => $user->created_at?->toIso8601String(),
+                'updated_at' => $user->updated_at?->toIso8601String(),
+                'deleted_at' => $user->deleted_at?->toIso8601String(),
+                'is_trashed' => $user->trashed(),
+                'can_delete' => $user->id !== $me,
+                'company' => $user->participantProfile?->company?->name,
+                'position' => $user->participantProfile?->position,
+                'is_self' => $user->id === $me,
+            ],
+            'activities' => $activities,
         ]);
     }
 

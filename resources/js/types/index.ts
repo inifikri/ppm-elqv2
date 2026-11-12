@@ -1,3 +1,4 @@
+export type * from './assessment';
 export type * from './auth';
 export type * from './dashboard';
 export type * from './master-data';

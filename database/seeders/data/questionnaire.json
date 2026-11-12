@@ -1,0 +1,258 @@
+{
+    "dimensions": [
+        {
+            "name": "TASK ORIENTED",
+            "sort_order": 1,
+            "is_active": true,
+            "sub_dimensions": [
+                {
+                    "name": "Clarifying",
+                    "sort_order": 1,
+                    "questions": [
+                        {
+                            "text": "Menjelaskan tugas dan tanggung jawab bawahan atau anggota lain.",
+                            "sort_order": 1
+                        },
+                        {
+                            "text": "Menjelaskan hasil kerja yang diharapkan dari suatu penugasan kepada bawahan atau anggota tim.",
+                            "sort_order": 2
+                        },
+                        {
+                            "text": "Menentukan tenggat waktu penyelesaian tugas yang harus dicapai oleh bawahan atau anggota tim",
+                            "sort_order": 3
+                        }
+                    ]
+                },
+                {
+                    "name": "Planning Activities",
+                    "sort_order": 2,
+                    "questions": [
+                        {
+                            "text": "Menyusun rencana kerja untuk mencapai tujuan unit kerja",
+                            "sort_order": 1
+                        },
+                        {
+                            "text": "Mengidentifikasi langkah-langkah yang perlu dilakukan untuk mencapai target kerja.",
+                            "sort_order": 2
+                        },
+                        {
+                            "text": "Menyusun jadwal kerja secara tepat sehingga pekerjaan dapat diselesaikan dengan efesien 1",
+                            "sort_order": 3
+                        }
+                    ]
+                },
+                {
+                    "name": "Monitor Operations",
+                    "sort_order": 3,
+                    "questions": [
+                        {
+                            "text": "Melakukan evaluasi penyelesaian pekerjaan.",
+                            "sort_order": 1
+                        },
+                        {
+                            "text": "Melakukan pengecekan kemajuan dan kualitas pekerjaan",
+                            "sort_order": 4
+                        },
+                        {
+                            "text": "Mengevaluasi kinerja bawahan atau anggota tim secara obyektif",
+                            "sort_order": 5
+                        }
+                    ]
+                },
+                {
+                    "name": "Problem Solvings",
+                    "sort_order": 4,
+                    "questions": [
+                        {
+                            "text": "Menentukan penyebab masalah secara cepat dan tepat sebelum mengambil tindakan penyelesaian",
+                            "sort_order": 1
+                        },
+                        {
+                            "text": "Mencegah pengeluaran biaya atau penundaan yang tidak perlu",
+                            "sort_order": 2
+                        },
+                        {
+                            "text": "Menyelesaikan masalah terkait pekerjaan dengan percaya diri dan tegas",
+                            "sort_order": 3
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "PEOPLE ORIENTED",
+            "sort_order": 2,
+            "is_active": true,
+            "sub_dimensions": [
+                {
+                    "name": "Supporting",
+                    "sort_order": 5,
+                    "questions": [
+                        {
+                            "text": "Menunjukan kepedulian terhadap kondisi karyawan di unit kerjanya",
+                            "sort_order": 1
+                        },
+                        {
+                            "text": "Memberikan dukungan dan dorongan ketika bawahan\/anggota tim menghadapi tugas yang sulit dan penuh tekanan",
+                            "sort_order": 2
+                        },
+                        {
+                            "text": "Mengungkapkan rasa percaya bahwa bawahan\/anggota tim di unit kerjanya dapat menyelesaikan tugas yang sulit",
+                            "sort_order": 3
+                        }
+                    ]
+                },
+                {
+                    "name": "Developing Others",
+                    "sort_order": 6,
+                    "questions": [
+                        {
+                            "text": "Memberikan umpan balik (feedback) kepada bawahan\/anggota tim.",
+                            "sort_order": 1
+                        },
+                        {
+                            "text": "Memberikan penugasan yang memungkinkan bawahan\/anggota tim untuk mengembangkan kompetensi dan kepercayaan dirinya.",
+                            "sort_order": 2
+                        },
+                        {
+                            "text": "Memberikan saran pengembangan yang bermanfaat bagi bawahan\/anggota tim",
+                            "sort_order": 3
+                        }
+                    ]
+                },
+                {
+                    "name": "Recognizing",
+                    "sort_order": 7,
+                    "questions": [
+                        {
+                            "text": "Memberikan pujian terhadap kinerja baik dari para bawahan\/anggota tim di unit kerjanya",
+                            "sort_order": 1
+                        },
+                        {
+                            "text": "Memberikan pengakuan bagi bawahan\/anggota tim yang berprestasi atau memberikan&nbsp; kontribusi penting bagi organisasi",
+                            "sort_order": 2
+                        },
+                        {
+                            "text": "Mengakui keberhasilan unit kerja adalah hasil kerjasama seluruh anggota tim",
+                            "sort_order": 3
+                        }
+                    ]
+                },
+                {
+                    "name": "Empowering",
+                    "sort_order": 8,
+                    "questions": [
+                        {
+                            "text": "Mendorong bawahan\/anggota tim untuk menentukan sendiri bagaimana cara melakukan pekerjaan",
+                            "sort_order": 1
+                        },
+                        {
+                            "text": "Meminta ide atau saran dari bawahan\/anggota tim ketika hendak mengambil keputusan penting",
+                            "sort_order": 2
+                        },
+                        {
+                            "text": "Memodifikasi rencana kerja agar dapat mengakomodir masukan dari bawahan\/anggota tim",
+                            "sort_order": 3
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "CHANGE ORIENTED",
+            "sort_order": 3,
+            "is_active": true,
+            "sub_dimensions": [
+                {
+                    "name": "External Monitoring",
+                    "sort_order": 9,
+                    "questions": [
+                        {
+                            "text": "Menggunakan jejaring sosial dan kontak dengan orang luar untuk mendapatkan informasi yang berguna",
+                            "sort_order": 1
+                        },
+                        {
+                            "text": "Mengikuti informasi tentang kemajuan teknologi yang relavan untuk pekerjaan",
+                            "sort_order": 4
+                        },
+                        {
+                            "text": "Mempelajari tentang kebutuhan dan preferensi pelanggan",
+                            "sort_order": 5
+                        }
+                    ]
+                },
+                {
+                    "name": "Advocating change",
+                    "sort_order": 10,
+                    "questions": []
+                },
+                {
+                    "name": "Envisioning change",
+                    "sort_order": 11,
+                    "questions": [
+                        {
+                            "text": "Menjelaskan mengapa sesuatu harus diubah atau diperbaiki",
+                            "sort_order": 1
+                        },
+                        {
+                            "text": "Meningkatkan kesadaran akan masalah yang akan dihadapi saat ini",
+                            "sort_order": 2
+                        },
+                        {
+                            "text": "Berani mengambil resiko pribadi untuk mendorong persetujuan akan perubahan",
+                            "sort_order": 3
+                        },
+                        {
+                            "text": "Menjelaskan visi yang jelas dan mudah dicapai",
+                            "sort_order": 4
+                        },
+                        {
+                            "text": "Menjelaskan peluang baru yang menarik bagi unit kerja \/ organisasi",
+                            "sort_order": 5
+                        },
+                        {
+                            "text": "Menjelaskan usulan perubahan dengan antusiasme dan optimisme",
+                            "sort_order": 6
+                        }
+                    ]
+                },
+                {
+                    "name": "Encouraging innovation",
+                    "sort_order": 12,
+                    "questions": [
+                        {
+                            "text": "Menyampaikan pentingnya inovasi dan fleksibelitas bagi keberhasilan unit",
+                            "sort_order": 1
+                        },
+                        {
+                            "text": "Mendorong anggota tim untuk mencari cara yang lebih baik untuk mencapai tujuan unit kerja",
+                            "sort_order": 2
+                        },
+                        {
+                            "text": "Mengajukan pertanyaan yang mendorong anggota tim untuk memikirkan masalah lama dengan cara baru",
+                            "sort_order": 3
+                        }
+                    ]
+                },
+                {
+                    "name": "Facilitating collective learning",
+                    "sort_order": 13,
+                    "questions": [
+                        {
+                            "text": "Mencari cara untuk mengadaptasi praktik terbaik yang digunakan oleh unit kerja\/organisasi lain",
+                            "sort_order": 1
+                        },
+                        {
+                            "text": "Melakukan tindak lanjut setelah mengetahui apa yang ditinggalkan",
+                            "sort_order": 2
+                        },
+                        {
+                            "text": "Mendorong berbagi pengetahuan baru dengan anggota lain dalam unit kerja\/organisasi",
+                            "sort_order": 3
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

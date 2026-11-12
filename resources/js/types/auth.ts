@@ -16,6 +16,18 @@ export type Auth = {
         manage_dimensions: boolean;
         manage_sub_dimensions: boolean;
         manage_questions: boolean;
+        manage_company?: boolean;
+        view_participants?: boolean;
+        update_participants?: boolean;
+        bulk_participants?: boolean;
+        resend_raters?: boolean;
+        revoke_raters?: boolean;
+        view_results?: boolean;
+        export_results?: boolean;
+        share_results?: boolean;
+        view_activity_log?: boolean;
+        manage_email_logs?: boolean;
+        manage_settings?: boolean;
     };
 };
 
@@ -23,4 +35,6 @@ export type MenuCounts = {
     dimensions: number | null;
     sub_dimensions: number | null;
     questions: number | null;
+    participants?: number | null;
+    overdue_raters?: number | null;
 };

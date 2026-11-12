@@ -28,9 +28,7 @@ describe('admin dashboard stats', function () {
     it('participants do not receive stats', function () {
         $this->actingAs(User::factory()->participant()->create())
             ->get(route('dashboard'))
-            ->assertInertia(fn (Assert $page) => $page
-                ->where('canViewStats', false)
-                ->where('dashboard', null));
+            ->assertRedirect(route('participant.evaluators.setup'));
     });
 
     it('computes kpi, roles, dimensions and attention from real data', function () {
@@ -90,8 +88,9 @@ it('bell: admin dapat notifications, peserta tidak', function () {
     $this->seed(RolePermissionSeeder::class);
 
     $this->actingAs(User::factory()->admin()->create())->get('/dashboard')
-        ->assertInertia(fn ($p) => $p->loadDeferredProps(fn ($p) => $p->has('notifications')));
+        ->assertInertia(fn ($p) => $p->has('notifications'));
 
-    $this->actingAs(User::factory()->participant()->create())->get('/dashboard')
+    $this->actingAs(User::factory()->participant()->create())
+        ->get(route('participant.evaluators.setup'))
         ->assertInertia(fn ($p) => $p->where('notifications', []));
 });

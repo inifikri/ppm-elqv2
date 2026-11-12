@@ -112,14 +112,14 @@
     --card-foreground: var(--color-slate-900);
     --popover: var(--surface-elevated);
     --popover-foreground: var(--color-slate-900);
-    --primary: var(--color-emerald-600);
+    --primary: #32327f;
     --primary-foreground: white;
     --secondary: var(--color-slate-100);
     --secondary-foreground: var(--color-slate-900);
     --muted: var(--color-slate-100);
     --muted-foreground: var(--color-slate-600);
-    --accent: var(--color-emerald-50);
-    --accent-foreground: var(--color-emerald-700);
+    --accent: #f0f0f8;
+    --accent-foreground: #32327f;
     --destructive: oklch(0.577 0.245 27.325);
     --destructive-foreground: oklch(0.985 0 0);
     --destructive-subtle: oklch(0.971 0.013 17);
@@ -138,7 +138,7 @@
     --info-subtle-foreground: oklch(0.44 0.11 242);
     --border: var(--color-slate-200);
     --input: var(--color-slate-400);
-    --ring: var(--color-emerald-500);
+    --ring: #32327f;
     --chart-1: oklch(0.546 0.245 262.9);
     --chart-2: oklch(0.85 0.15 90);
     --chart-3: oklch(0.6 0.12 165);
@@ -147,12 +147,12 @@
     --radius: 0.5rem;
     --sidebar: var(--surface);
     --sidebar-foreground: var(--text-secondary);
-    --sidebar-primary: var(--color-emerald-600);
+    --sidebar-primary: #32327f;
     --sidebar-primary-foreground: white;
-    --sidebar-accent: var(--color-emerald-50);
-    --sidebar-accent-foreground: var(--color-emerald-700);
+    --sidebar-accent: #f0f0f8;
+    --sidebar-accent-foreground: #32327f;
     --sidebar-border: var(--color-slate-200);
-    --sidebar-ring: var(--color-emerald-500);
+    --sidebar-ring: #32327f;
 }
 
 .dark {
@@ -167,14 +167,14 @@
     --card-foreground: var(--color-slate-50);
     --popover: var(--surface-elevated);
     --popover-foreground: var(--color-slate-50);
-    --primary: var(--color-emerald-400);
-    --primary-foreground: var(--color-slate-950);
+    --primary: #8e8ee0;
+    --primary-foreground: #0b0f19;
     --secondary: var(--color-slate-800);
     --secondary-foreground: var(--color-slate-50);
     --muted: var(--color-slate-800);
     --muted-foreground: var(--text-muted);
-    --accent: var(--color-emerald-950);
-    --accent-foreground: var(--color-emerald-200);
+    --accent: #1e1e38;
+    --accent-foreground: #c2c2f2;
     --destructive: oklch(0.65 0.2 25);
     --destructive-foreground: oklch(0.985 0 0);
     --destructive-subtle: oklch(0.26 0.06 25);
@@ -193,7 +193,7 @@
     --info-subtle-foreground: oklch(0.86 0.08 230);
     --border: var(--color-slate-800);
     --input: var(--color-slate-600);
-    --ring: var(--color-emerald-400);
+    --ring: #8e8ee0;
     --chart-1: oklch(0.65 0.2 262.9);
     --chart-2: oklch(0.85 0.15 90);
     --chart-3: oklch(0.7 0.14 165);
@@ -201,12 +201,12 @@
     --chart-5: oklch(0.72 0.17 50);
     --sidebar: var(--surface);
     --sidebar-foreground: var(--text-secondary);
-    --sidebar-primary: var(--color-emerald-400);
-    --sidebar-primary-foreground: var(--color-slate-950);
-    --sidebar-accent: var(--color-slate-800);
-    --sidebar-accent-foreground: var(--color-emerald-200);
+    --sidebar-primary: #8e8ee0;
+    --sidebar-primary-foreground: #0b0f19;
+    --sidebar-accent: #1e1e38;
+    --sidebar-accent-foreground: #c2c2f2;
     --sidebar-border: var(--color-slate-800);
-    --sidebar-ring: var(--color-emerald-400);
+    --sidebar-ring: #8e8ee0;
 }
 
 @layer base {
@@ -236,12 +236,155 @@
         outline-offset: 2px;
     }
 
+    /* Hilangkan native outline & double outline pada form controls yang memiliki custom focus ring */
+    input:focus,
+    input:focus-visible,
+    textarea:focus,
+    textarea:focus-visible,
+    select:focus,
+    select:focus-visible {
+        outline: none !important;
+        outline-offset: 0 !important;
+    }
+
     @media (prefers-reduced-motion: reduce) {
-        *,
-        ::before,
-        ::after {
+        *:not(.loading-spinner),
+        *:not(.loading-spinner)::before,
+        *:not(.loading-spinner)::after {
             animation-duration: 0.01ms !important;
             transition-duration: 0.01ms !important;
         }
     }
 }
+
+@property --arc-start {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
+
+@property --arc-end {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
+
+@property --progress-dash-animation {
+    syntax: '*';
+    inherits: false;
+    initial-value: , progress-dash 2.6s ease-in-out infinite;
+}
+
+@keyframes progress-spin {
+    to {
+        rotate: 1turn;
+    }
+}
+
+@keyframes progress-dash {
+    from {
+        --arc-start: 0deg;
+        --arc-end: 24deg;
+    }
+    50% {
+        --arc-start: 96deg;
+        --arc-end: 330deg;
+    }
+    to {
+        --arc-start: 360deg;
+        --arc-end: 384deg;
+    }
+}
+
+progress.loading-spinner:indeterminate::-webkit-progress-bar,
+progress.loading-spinner:indeterminate::-webkit-progress-value {
+    display: none;
+    background: none;
+}
+
+progress.loading-spinner:indeterminate::-moz-progress-bar {
+    display: none;
+    background: none;
+}
+
+progress.loading-spinner:indeterminate::slider-fill {
+    display: none;
+    background: none;
+}
+
+progress.loading-spinner:indeterminate {
+    --_from: calc(90deg + var(--arc-start, 0deg));
+    --_to: calc(90deg + var(--arc-end, 165deg));
+    --size: 3.5rem;
+    --thickness: 3.5px;
+    --spinner-color: var(--primary);
+    --track-color: color-mix(in oklab, var(--primary) 16%, transparent);
+    --spinner-duration: 1.35s;
+    --_used-spinner-duration: var(--spinner-duration);
+
+    position: relative;
+    display: inline-block;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 9999px;
+    appearance: none;
+    background: conic-gradient(
+            from var(--_from),
+            transparent 0deg,
+            color-mix(in oklab, var(--spinner-color) 35%, transparent)
+                calc((var(--_to) - var(--_from)) * 0.25),
+            var(--spinner-color) calc(var(--_to) - var(--_from)),
+            transparent 0
+        )
+        var(--track-color);
+    animation:
+        progress-spin var(--_used-spinner-duration) linear infinite
+        var(--progress-dash-animation, );
+}
+
+@supports (background-clip: border-area) {
+    progress.loading-spinner:indeterminate {
+        background-clip: border-area;
+        border: var(--thickness) solid transparent;
+        background-origin: border-box;
+    }
+}
+
+@supports not (background-clip: border-area) {
+    progress.loading-spinner:indeterminate {
+        --clip-boundary: calc(100% - var(--thickness));
+        -webkit-mask-image: radial-gradient(
+            farthest-side,
+            transparent calc(var(--clip-boundary) - 0.5px),
+            black var(--clip-boundary)
+        );
+        mask-image: radial-gradient(
+            farthest-side,
+            transparent calc(var(--clip-boundary) - 0.5px),
+            black var(--clip-boundary)
+        );
+        border: 0;
+    }
+}
+
+progress.loading-spinner.loading-spinner-lg:indeterminate {
+    --size: 4.5rem;
+    --thickness: 4px;
+}
+
+progress.loading-spinner.loading-spinner-sm:indeterminate {
+    --size: 1.25rem;
+    --thickness: 2.25px;
+}
+
+progress.loading-spinner.loading-spinner-xs:indeterminate {
+    --size: 0.875rem;
+    --thickness: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    progress.loading-spinner:indeterminate {
+        --_used-spinner-duration: 6s;
+    }
+}
+

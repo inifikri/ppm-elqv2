@@ -35,6 +35,12 @@ class Rater extends Model
         return 'ulid';
     }
 
+    public function resolveRouteBindingQuery($query, $value, $field = null)
+    {
+        return $query->where($field ?? $this->getRouteKeyName(), $value)
+            ->when(is_numeric($value), fn ($q) => $q->orWhere('id', (int) $value));
+    }
+
     /**
      * @return array<string, mixed>
      */

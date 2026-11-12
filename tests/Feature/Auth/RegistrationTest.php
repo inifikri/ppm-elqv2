@@ -1,23 +1,33 @@
 <?php
 
 use App\Actions\Fortify\EmailDomainChecker;
+use App\Enums\EmailLogStatus;
+use App\Enums\EmailLogType;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Features;
+use Symfony\Component\Mailer\Exception\TransportException;
 
 beforeEach(function () {
     $this->skipUnlessFortifyHas(Features::registration());
-    config(['elq.register.dns_check' => false, 'elq.register.min_seconds' => 0]);
+    config(['elq.register.dns_check' => false, 'elq.register.min_seconds' => 0, 'elq.register.pow_max' => 20]);
 });
 
-/** Ambil captcha dari session lalu kembalikan payload valid (jawaban = hasil penjumlahan soal). */
+/** Ambil challenge PoW dari session lalu cari nonce yang cocok dengan SHA-256 challenge. */
 function registerPayload($test, array $override = []): array
 {
-    $question = $test->getJson(route('register.captcha'))->json('question');
-    [$a, $b] = array_map('intval', explode(' + ', str_replace(' = ?', '', $question)));
+    ['salt' => $salt, 'challenge' => $challenge, 'max' => $max] = $test->getJson(route('register.captcha'))->json();
+
+    $answer = 0;
+    for ($n = 0; $n <= $max; $n++) {
+        if (hash('sha256', "$salt:$n") === $challenge) {
+            $answer = $n;
+            break;
+        }
+    }
 
     return array_merge([
         'name' => 'Test User',
@@ -26,7 +36,7 @@ function registerPayload($test, array $override = []): array
         'position' => 'Manajer',
         'password' => 'Password1',
         'password_confirmation' => 'Password1',
-        'captcha_answer' => $a + $b,
+        'captcha_answer' => $answer,
         'website' => '',
     ], $override);
 }
@@ -188,4 +198,46 @@ test('company suggest wildcards never match everything', function () {
     foreach (['%', '%%', '_', '__', 'a%'] as $q) {
         $this->getJson(route('companies.suggest', ['q' => $q]))->assertJson(['data' => []]);
     }
+});
+
+test('html tags are rejected on registration and non-login input fields', function () {
+    $this->postJson(route('register.store'), registerPayload($this, [
+        'name' => '<script>alert(1)</script>Budi',
+        'company' => 'PT <b>Maju</b>',
+        'position' => '<img src=x onerror=alert(1)>Manajer',
+        'email' => '<script>@example.com',
+    ]))->assertJsonValidationErrors(['name', 'company', 'position', 'email']);
+
+    $this->postJson(route('register.check-email'), ['email' => '<script>alert(1)</script>@example.com'])
+        ->assertOk()
+        ->assertJson(['status' => 'invalid']);
+
+    expect(User::count())->toBe(0);
+});
+
+test('registration succeeds and preserves data even if mail host fails', function () {
+    Notification::shouldReceive('send')
+        ->once()
+        ->andThrow(new TransportException('Connection to mail server failed: Connection refused'));
+
+    $response = $this->postJson(route('register.store'), registerPayload($this, [
+        'email' => 'smtp-error@example.com',
+    ]));
+
+    $response->assertCreated()
+        ->assertJson([
+            'email' => 'smtp-error@example.com',
+            'mail_sent' => false,
+        ]);
+
+    $user = User::where('email', 'smtp-error@example.com')->firstOrFail();
+    expect($user->email_verified_at)->toBeNull()
+        ->and($user->hasRole('participant'))->toBeTrue()
+        ->and($user->participantProfile->position)->toBe('Manajer')
+        ->and($user->participantProfile->company->name)->toBe('PT Maju Jaya');
+
+    $log = $user->emailLogs()->where('type', EmailLogType::EmailVerification)->first();
+    expect($log)->not->toBeNull()
+        ->and($log->status)->toBe(EmailLogStatus::Failed)
+        ->and($log->error_message)->toContain('Connection refused');
 });

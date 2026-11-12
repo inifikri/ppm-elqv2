@@ -2,6 +2,7 @@
 
 namespace App\Actions\Fortify;
 
+use App\Http\Middleware\RejectHtmlTags;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -24,7 +25,11 @@ class EmailDomainChecker
     {
         $email = Str::lower(trim($email));
 
-        if (strlen($email) > 255 || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if (
+            strlen($email) > 255
+            || preg_match(RejectHtmlTags::PATTERN, $email) === 1
+            || ! filter_var($email, FILTER_VALIDATE_EMAIL)
+        ) {
             return self::INVALID;
         }
 

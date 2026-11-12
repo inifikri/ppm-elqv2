@@ -57,9 +57,10 @@ function Button({
     icon?: LucideIcon
   }) {
   const Comp = asChild ? Slot : "button"
-  const leading = loading ? (
+  const isIconButton = size === "icon"
+  const leading = loading && !isIconButton ? (
     <Spinner aria-hidden="true" />
-  ) : Icon ? (
+  ) : Icon && (!loading || !isIconButton) ? (
     <Icon aria-hidden="true" />
   ) : null
 
@@ -84,6 +85,8 @@ function Button({
     >
       {asChild ? (
         slotChild
+      ) : isIconButton && loading ? (
+        <Spinner className="size-4.5" aria-hidden="true" />
       ) : (
         <>
           {leading}

@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
-#[Fillable(['name'])]
+#[Fillable(['name', 'name_normalized'])]
 class Company extends Model
 {
     /** @use HasFactory<CompanyFactory> */

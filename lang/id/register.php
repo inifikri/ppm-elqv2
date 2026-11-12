@@ -7,7 +7,7 @@ return [
         'taken' => 'Email ini sudah terdaftar.',
     ],
     'captcha' => [
-        'wrong' => 'Jawaban captcha salah. Coba soal yang baru.',
+        'wrong' => 'Verifikasi keamanan belum sesuai. Silakan centang ulang kotak verifikasi.',
         'too_fast' => 'Formulir dikirim terlalu cepat. Tunggu sebentar lalu coba lagi.',
         'failed' => 'Verifikasi gagal. Muat ulang halaman lalu coba lagi.',
     ],

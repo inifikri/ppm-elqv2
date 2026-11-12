@@ -1,6 +1,7 @@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import type { PermissionGroup } from '@/types';
+import type { UserRoleType } from '@/types/user-management';
 
 export default function PermissionCheckboxes({
     groups,
@@ -8,20 +9,31 @@ export default function PermissionCheckboxes({
     checked,
 }: {
     groups: PermissionGroup[];
-    role: 'admin' | 'participant';
+    role: UserRoleType;
     checked: string[];
 }) {
+    const isSuperAdmin = role === 'superadmin';
     const isAdmin = role === 'admin';
-    const visible = isAdmin
+    const isFullAccess = isSuperAdmin || isAdmin;
+
+    // Filter grup yang relevan berdasarkan role
+    const visible = isSuperAdmin
         ? groups
-        : groups.filter((g) => g.group === 'Assessment');
+        : isAdmin
+          ? groups.filter((g) => g.group !== 'Pengguna' && g.group !== 'Sistem')
+          : groups.filter((g) => g.group === 'Assessment');
 
     return (
         <fieldset className="space-y-4">
             <legend className="text-sm font-medium">Izin tambahan</legend>
+            {isSuperAdmin && (
+                <p className="text-sm text-muted-foreground">
+                    Super Admin memiliki seluruh hak akses sistem secara penuh.
+                </p>
+            )}
             {isAdmin && (
                 <p className="text-sm text-muted-foreground">
-                    Administrator memiliki seluruh hak akses
+                    Administrator memiliki hak akses operasional asesmen secara penuh.
                 </p>
             )}
             {visible.map((g) => (
@@ -35,12 +47,12 @@ export default function PermissionCheckboxes({
                             >
                                 <Checkbox
                                     id={`perm-${p.name}`}
-                                    name={isAdmin ? undefined : 'permissions[]'}
+                                    name={isFullAccess ? undefined : 'permissions[]'}
                                     value={p.name}
                                     defaultChecked={
-                                        isAdmin || checked.includes(p.name)
+                                        isFullAccess || checked.includes(p.name)
                                     }
-                                    disabled={isAdmin}
+                                    disabled={isFullAccess}
                                 />
                                 <Label htmlFor={`perm-${p.name}`}>
                                     {p.label}

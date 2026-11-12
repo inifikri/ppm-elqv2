@@ -11,9 +11,10 @@ function Toaster({ ...props }: ToasterProps) {
     return (
         <Sonner
             theme={appearance}
-            className="toaster group"
+            className="toaster group z-40"
             position="top-center"
-            visibleToasts={3}
+            offset="4rem"
+            visibleToasts={1}
             icons={{
                 success: <CircleCheck />,
                 info: <Info />,
@@ -22,7 +23,7 @@ function Toaster({ ...props }: ToasterProps) {
             }}
             toastOptions={{
                 classNames: {
-                    toast: '!rounded-card !border !shadow-overlay !text-sm',
+                    toast: '!rounded-xl !border !shadow-md !text-sm !w-[calc(100vw-2rem)] sm:!w-auto !max-w-md',
                     success:
                         '!border-success/30 !bg-success-subtle !text-success-subtle-foreground',
                     info: '!border-info/30 !bg-info-subtle !text-info-subtle-foreground',

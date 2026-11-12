@@ -18,11 +18,19 @@ class SetUsersActive
             return 'Tidak dapat memproses akun sendiri';
         }
 
-        $isLastActiveAdmin = $user->is_active
-            && $user->hasRole(UserRole::Admin->value)
-            && ! User::active()->role(UserRole::Admin->value)->whereKeyNot($user->id)->exists();
+        if ($user->is_active
+            && $user->hasRole(UserRole::SuperAdmin->value)
+            && ! User::active()->role(UserRole::SuperAdmin->value)->whereKeyNot($user->id)->exists()) {
+            return 'Super Admin aktif terakhir';
+        }
 
-        return $isLastActiveAdmin ? 'Admin aktif terakhir' : null;
+        if ($user->is_active
+            && $user->hasRole(UserRole::Admin->value)
+            && ! User::active()->role(UserRole::Admin->value)->whereKeyNot($user->id)->exists()) {
+            return 'Admin aktif terakhir';
+        }
+
+        return null;
     }
 
     /**

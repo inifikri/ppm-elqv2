@@ -1,8 +1,13 @@
 import {
+    BellRing,
+    Building2,
     CircleQuestionMark,
+    History,
     Layers,
     LayoutGrid,
+    Mail,
     Network,
+    Settings,
     Users,
 } from "lucide-react";
 import { Link, usePage } from "@inertiajs/react";
@@ -17,8 +22,13 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { dashboard } from "@/routes";
+import { index as activityLogsIndex } from "@/routes/admin/activity-logs";
+import { index as companiesIndex } from "@/routes/admin/companies";
+import { index as emailLogsIndex } from "@/routes/admin/email-logs";
+import { index as retentionIndex } from "@/routes/admin/settings/retention";
 import { index as domainsIndex } from "@/routes/admin/domains";
 import { index as questionsIndex } from "@/routes/admin/questions";
+import { index as remindersIndex } from "@/routes/admin/reminders";
 import { index as subDomainsIndex } from "@/routes/admin/sub-domains";
 import { index as usersIndex } from "@/routes/admin/users";
 import type { NavGroup } from "@/types";
@@ -30,8 +40,27 @@ export function AppSidebar() {
     const { auth, menuCounts } = usePage().props;
 
     const { can } = auth;
+    const assessmentItems: NavGroup["items"] = [];
     const masterItems: NavGroup["items"] = [];
     const logItems: NavGroup["items"] = [];
+
+    if (can.view_participants) {
+        assessmentItems.push({
+            title: "Peserta",
+            href: "/admin/participants",
+            icon: Users,
+            exact: false,
+            badge: toBadge(menuCounts?.participants, "peserta"),
+        });
+
+        assessmentItems.push({
+            title: "Pengingat Penilai",
+            href: remindersIndex(),
+            icon: BellRing,
+            exact: false,
+            badge: toBadge(menuCounts?.overdue_raters, "tertunda"),
+        });
+    }
 
     if (can.manage_dimensions) {
         masterItems.push({
@@ -63,6 +92,42 @@ export function AppSidebar() {
         });
     }
 
+    if (can.manage_company ?? can.manage_users) {
+        masterItems.push({
+            title: "Perusahaan",
+            href: companiesIndex(),
+            icon: Building2,
+            exact: false,
+        });
+    }
+
+    if (can.view_activity_log) {
+        logItems.push({
+            title: "Activity Log",
+            href: activityLogsIndex(),
+            icon: History,
+            exact: false,
+        });
+    }
+
+    if (can.manage_email_logs) {
+        logItems.push({
+            title: "Email Log",
+            href: emailLogsIndex(),
+            icon: Mail,
+            exact: false,
+        });
+    }
+
+    if (can.manage_settings) {
+        logItems.push({
+            title: "Retensi Log",
+            href: retentionIndex(),
+            icon: Settings,
+            exact: false,
+        });
+    }
+
     const groups: NavGroup[] = [
         {
             label: "Menu",
@@ -74,6 +139,7 @@ export function AppSidebar() {
                 },
             ],
         },
+        { label: "Asesmen", items: assessmentItems },
         { label: "Master Data", items: masterItems },
         {
             label: "Administrasi",
@@ -88,7 +154,7 @@ export function AppSidebar() {
                   ]
                 : [],
         },
-        { label: "Settings", items: logItems },
+        { label: "Sistem", items: logItems },
     ].filter((g) => g.items.length > 0);
 
     return (
@@ -97,7 +163,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href={dashboard()}>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>

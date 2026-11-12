@@ -49,6 +49,11 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function superadmin(): static
+    {
+        return $this->withRole(UserRole::SuperAdmin);
+    }
+
     public function admin(): static
     {
         return $this->withRole(UserRole::Admin);

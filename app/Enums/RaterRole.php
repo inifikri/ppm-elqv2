@@ -14,7 +14,7 @@ enum RaterRole: string
         return match ($this) {
             self::SelfRater => 'Diri sendiri',
             self::Boss => 'Atasan',
-            self::Subordinate => 'Bawahan',
+            self::Subordinate => 'Bawahan/Rekan',
         };
     }
 

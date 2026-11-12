@@ -4,21 +4,21 @@ import {
     Hourglass,
     Percent,
     Users,
-} from 'lucide-react';
-import { Deferred, Head, router } from '@inertiajs/react';
-import { EmptyState } from '@/components/empty-state';
-import { ErrorState } from '@/components/error-state';
-import { PageContainer } from '@/components/page-container';
-import { WelcomeCard } from './dashboard/components/welcome-card';
-import { StatCard, StatCardSkeleton } from '@/components/stat-card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { dashboard } from '@/routes';
-import type { DashboardData } from '@/types';
-import { AttentionList } from './dashboard/components/attention-list';
-import { DimensionOverview } from './dashboard/components/dimension-overview';
-import { ProgressOverview } from './dashboard/components/progress-overview';
-import { RecentActivity } from './dashboard/components/recent-activity';
-import { RecentAssessments } from './dashboard/components/recent-assessments';
+} from "lucide-react";
+import { Deferred, Head, router } from "@inertiajs/react";
+import { EmptyState } from "@/components/empty-state";
+import { ErrorState } from "@/components/error-state";
+import { PageContainer } from "@/components/page-container";
+import { WelcomeCard } from "./dashboard/components/welcome-card";
+import { StatCard, StatCardSkeleton } from "@/components/stat-card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { dashboard } from "@/routes";
+import type { DashboardData } from "@/types";
+import { AttentionList } from "./dashboard/components/attention-list";
+import { DimensionOverview } from "./dashboard/components/dimension-overview";
+import { ProgressOverview } from "./dashboard/components/progress-overview";
+import { RecentActivity } from "./dashboard/components/recent-activity";
+import { RecentAssessments } from "./dashboard/components/recent-assessments";
 
 function DashboardSkeleton() {
     return (
@@ -46,7 +46,7 @@ function DashboardContent({ data }: { data?: DashboardData }) {
             <ErrorState
                 title="Dashboard gagal dimuat"
                 description="Terjadi kesalahan saat mengambil data."
-                onRetry={() => router.reload({ only: ['dashboard'] })}
+                onRetry={() => router.reload({ only: ["dashboard"] })}
             />
         );
     }
@@ -86,13 +86,12 @@ function DashboardContent({ data }: { data?: DashboardData }) {
                 />
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-3">
-                <div className="space-y-4 lg:col-span-2">
-                    <ProgressOverview kpi={kpi} roles={data.roles} />
-                    <DimensionOverview dimensions={data.dimensions} />
-                </div>
-                <AttentionList items={data.attention} />
+            <div className="grid gap-4 lg:grid-cols-2">
+                <ProgressOverview kpi={kpi} roles={data.roles} />
+                <DimensionOverview dimensions={data.dimensions} />
             </div>
+
+            <AttentionList items={data.attention} />
 
             <div className="grid gap-4 lg:grid-cols-2">
                 <RecentAssessments items={data.recent_assessments} />
@@ -133,7 +132,7 @@ export default function Dashboard({
 Dashboard.layout = {
     breadcrumbs: [
         {
-            title: 'Dashboard',
+            title: "Dashboard",
             href: dashboard(),
         },
     ],
