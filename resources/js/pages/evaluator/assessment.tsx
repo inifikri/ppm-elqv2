@@ -6,6 +6,7 @@ import {
 } from "@/components/assessment/assessment-progress";
 import { QuestionCard } from "@/components/assessment/question-card";
 import { QuestionNavigator } from "@/components/assessment/question-navigator";
+import { DesktopQuestionNavigator } from "@/components/assessment/desktop-question-navigator";
 import { QuestionsLoader } from "@/components/assessment/questions-loader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -282,105 +283,125 @@ export default function EvaluatorAssessment({
                     </div>
                 </div>
 
-                {/* Sticky Progress Header */}
-                <AssessmentProgress
-                    currentIndex={currentIndex}
-                    totalQuestions={totalQuestions}
-                    answeredCount={answeredCount}
-                    autosaveStatus={autosaveStatus}
-                    onRetryAutosave={handleRetryAutosave}
-                    onOpenNavigator={() => setNavigatorOpen(true)}
-                />
+                {/* 2 Kolom di Desktop/Tablet: Kolom Kiri Soal, Kolom Kanan Navigator Tetap (Permanent Side Panel) */}
+                <div className="md:grid md:grid-cols-12 md:gap-6 lg:gap-8 items-start">
+                    {/* Sisi Utama: Progres, Pertanyaan Aktif, & Tombol Navigasi */}
+                    <div className="space-y-4 md:col-span-7 lg:col-span-8">
+                        {/* Sticky Progress Header */}
+                        <AssessmentProgress
+                            currentIndex={currentIndex}
+                            totalQuestions={totalQuestions}
+                            answeredCount={answeredCount}
+                            autosaveStatus={autosaveStatus}
+                            onRetryAutosave={handleRetryAutosave}
+                            onOpenNavigator={() => setNavigatorOpen(true)}
+                        />
 
-                {/* Main Question Card */}
-                <div className="pt-2">
-                    <QuestionCard
-                        question={currentQuestion}
-                        questionNumber={currentIndex + 1}
-                        selectedValue={answers[currentQuestion.id] ?? null}
-                        onChange={handleSelectOption}
-                        disabled={isSubmitting}
-                    />
-                </div>
+                        {/* Main Question Card */}
+                        <div className="pt-2">
+                            <QuestionCard
+                                question={currentQuestion}
+                                questionNumber={currentIndex + 1}
+                                selectedValue={answers[currentQuestion.id] ?? null}
+                                onChange={handleSelectOption}
+                                disabled={isSubmitting}
+                            />
+                        </div>
 
-                {/* Navigation Bar (mobile friendly) */}
-                <div className="flex items-center justify-between gap-2 sm:gap-3 pt-3">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="default"
-                        icon={ArrowLeft}
-                        disabled={currentIndex === 0 || isSubmitting}
-                        onClick={() =>
-                            setCurrentIndex((prev) => Math.max(0, prev - 1))
-                        }
-                    >
-                        Sebelumnya
-                    </Button>
-
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="default"
-                        onClick={() => setNavigatorOpen(true)}
-                        className="gap-1.5"
-                        title="Buka daftar 39 pertanyaan"
-                    >
-                        <LayoutGrid className="size-4 text-primary" />
-                        <span className="hidden sm:inline">Daftar Soal</span>
-                        <span className="sm:hidden text-xs">
-                            {answeredCount}/{totalQuestions}
-                        </span>
-                    </Button>
-
-                    <div className="flex items-center gap-2">
-                        {currentIndex < totalQuestions - 1 ? (
+                        {/* Navigation Bar (mobile friendly) */}
+                        <div className="flex items-center justify-between gap-2 sm:gap-3 pt-3">
                             <Button
                                 type="button"
-                                variant="default"
+                                variant="outline"
                                 size="default"
-                                iconPlacement="end"
-                                icon={ArrowRight}
-                                disabled={!isCurrentAnswered || isSubmitting}
+                                icon={ArrowLeft}
+                                disabled={currentIndex === 0 || isSubmitting}
                                 onClick={() =>
-                                    setCurrentIndex((prev) =>
-                                        Math.min(totalQuestions - 1, prev + 1),
-                                    )
+                                    setCurrentIndex((prev) => Math.max(0, prev - 1))
                                 }
                             >
-                                Selanjutnya
+                                Sebelumnya
                             </Button>
-                        ) : (
+
+                            {/* Tombol Daftar Soal hanya untuk mobile (< md), karena desktop/tablet sudah ada panel permanen */}
                             <Button
                                 type="button"
-                                variant="default"
+                                variant="outline"
                                 size="default"
-                                icon={Send}
-                                disabled={!isAllAnswered || isSubmitting}
-                                onClick={() => setConfirmSubmitOpen(true)}
+                                onClick={() => setNavigatorOpen(true)}
+                                className="gap-1.5 md:hidden"
+                                title="Buka daftar 39 pertanyaan"
                             >
-                                Kirim Penilaian
+                                <LayoutGrid className="size-4 text-primary" />
+                                <span className="hidden sm:inline">Daftar Soal</span>
+                                <span className="sm:hidden text-xs">
+                                    {answeredCount}/{totalQuestions}
+                                </span>
                             </Button>
+
+                            <div className="flex items-center gap-2">
+                                {currentIndex < totalQuestions - 1 ? (
+                                    <Button
+                                        type="button"
+                                        variant="default"
+                                        size="default"
+                                        iconPlacement="end"
+                                        icon={ArrowRight}
+                                        disabled={!isCurrentAnswered || isSubmitting}
+                                        onClick={() =>
+                                            setCurrentIndex((prev) =>
+                                                Math.min(totalQuestions - 1, prev + 1),
+                                            )
+                                        }
+                                    >
+                                        Selanjutnya
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        type="button"
+                                        variant="default"
+                                        size="default"
+                                        icon={Send}
+                                        disabled={!isAllAnswered || isSubmitting}
+                                        onClick={() => setConfirmSubmitOpen(true)}
+                                    >
+                                        Kirim Penilaian
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Direct submit button if all questions answered and not on last question (mobile only) */}
+                        {isAllAnswered && currentIndex < totalQuestions - 1 && (
+                            <div className="flex justify-end pt-1 md:hidden">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    icon={CheckCircle2}
+                                    onClick={() => setConfirmSubmitOpen(true)}
+                                    disabled={isSubmitting}
+                                    className="text-xs text-primary font-medium"
+                                >
+                                    Semua ({totalQuestions}) soal terisi - Kirim sekarang
+                                </Button>
+                            </div>
                         )}
                     </div>
-                </div>
 
-                {/* Direct submit button if all questions answered and not on last question */}
-                {isAllAnswered && currentIndex < totalQuestions - 1 && (
-                    <div className="flex justify-end pt-1">
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            icon={CheckCircle2}
-                            onClick={() => setConfirmSubmitOpen(true)}
-                            disabled={isSubmitting}
-                            className="text-xs text-primary font-medium"
-                        >
-                            Semua soal terjawab · Kirim sekarang
-                        </Button>
-                    </div>
-                )}
+                    {/* Sisi Samping: Desktop Question Navigator (Tampil Tetap / Sticky, Non-Modal, Pointer Visual) */}
+                    <aside className="hidden md:block md:col-span-5 lg:col-span-4" aria-label="Navigasi Daftar Soal">
+                        <DesktopQuestionNavigator
+                            questions={questions}
+                            answers={answers}
+                            currentIndex={currentIndex}
+                            onSelectQuestion={setCurrentIndex}
+                            onSubmitClick={() => setConfirmSubmitOpen(true)}
+                            submitLabel="Kirim Penilaian Sekarang"
+                            isSubmitting={isSubmitting}
+                        />
+                    </aside>
+                </div>
             </div>
 
             {/* Confirmation Dialog */}

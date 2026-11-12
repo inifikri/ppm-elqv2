@@ -20,8 +20,16 @@ void createInertiaApp({
                 );
             case name.startsWith('auth/'):
                 return AuthLayout;
+            case name === 'participant/assessment/run':
+                return ({ children }: { children: React.ReactNode }) => (
+                    <ParticipantLayout maxWidth="7xl">{children}</ParticipantLayout>
+                );
             case name.startsWith('participant/'):
                 return ParticipantLayout;
+            case name === 'evaluator/assessment':
+                return ({ children }: { children: React.ReactNode }) => (
+                    <EvaluatorLayout maxWidth="7xl">{children}</EvaluatorLayout>
+                );
             case name.startsWith('evaluator/'):
                 return EvaluatorLayout;
             case name.startsWith('settings/'):

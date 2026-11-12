@@ -193,12 +193,15 @@ export function QuestionNavigator({
                                             onClick={() => handleJump(idx)}
                                             aria-label={`Nomor ${idx + 1}, ${isAnswered ? 'sudah dijawab' : 'belum dijawab'}`}
                                             className={cn(
-                                                'relative flex h-11 w-full items-center justify-center rounded-lg border text-xs font-semibold transition-all',
-                                                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                                                isCurrent && 'ring-2 ring-primary ring-offset-2',
-                                                isAnswered
-                                                    ? 'border-primary/40 bg-primary/10 text-primary font-bold'
-                                                    : 'border-border/80 bg-card text-muted-foreground hover:bg-muted/50'
+                                                'relative flex h-11 w-full items-center justify-center rounded-lg border text-xs font-semibold outline-none transition-colors',
+                                                'focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0',
+                                                isCurrent
+                                                    ? isAnswered
+                                                        ? 'border-primary bg-primary text-primary-foreground font-bold shadow-xs'
+                                                        : 'border-primary bg-primary/15 text-primary font-bold shadow-xs'
+                                                    : isAnswered
+                                                      ? 'border-transparent bg-primary/90 text-primary-foreground'
+                                                      : 'border-border/80 bg-card text-muted-foreground hover:border-primary hover:bg-muted/50'
                                             )}
                                         >
                                             <span>{idx + 1}</span>

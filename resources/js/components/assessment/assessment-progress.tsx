@@ -64,23 +64,27 @@ export function AssessmentProgress({
                     </div>
                 </div>
 
-                {/* Right: Counter text or Interactive Navigator Button */}
-                {onOpenNavigator ? (
-                    <button
-                        type="button"
-                        onClick={onOpenNavigator}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-background/80 px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors"
-                        title="Lihat daftar pertanyaan"
-                    >
-                        <LayoutGrid className="size-3 text-primary" />
-                        <span>Daftar Soal</span>
-                        <span className="text-muted-foreground">({answeredCount}/{totalQuestions})</span>
-                    </button>
-                ) : (
-                    <span className="text-xs font-medium text-muted-foreground">
-                        {answeredCount} dari {totalQuestions} terjawab
+                {/* Right: Counter text on desktop, or Interactive Navigator Button on mobile */}
+                <div className="flex items-center gap-2">
+                    {onOpenNavigator && (
+                        <button
+                            type="button"
+                            onClick={onOpenNavigator}
+                            className="inline-flex md:hidden items-center gap-1.5 rounded-full border border-border/80 bg-background/80 px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                            title="Lihat daftar pertanyaan"
+                        >
+                            <LayoutGrid className="size-3 text-primary" />
+                            <span>Daftar Soal</span>
+                            <span className="text-muted-foreground">({answeredCount}/{totalQuestions})</span>
+                        </button>
+                    )}
+                    <span className={cn(
+                        "text-xs font-medium text-muted-foreground",
+                        onOpenNavigator ? "hidden md:inline" : "inline"
+                    )}>
+                        {answeredCount} dari {totalQuestions} terjawab ({progressPercent}%)
                     </span>
-                )}
+                </div>
             </div>
 
             {/* Micro progress bar */}
