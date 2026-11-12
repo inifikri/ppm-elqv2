@@ -52,8 +52,11 @@ Route::middleware(['auth', 'verified'])
             Route::get('users/{user}/result', fn ($user) => redirect()->route('admin.participants.result.show', $user))
                 ->whereNumber('user')
                 ->withTrashed();
-            Route::resource('companies', CompanyController::class)->except(['show']);
         });
+
+        Route::resource('companies', CompanyController::class)
+            ->except(['show'])
+            ->middleware('can:company.manage');
 
         Route::middleware('can:participants.view')->group(function () {
             Route::get('participants', [ParticipantController::class, 'index'])->name('participants.index');

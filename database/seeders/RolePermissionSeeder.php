@@ -21,11 +21,15 @@ class RolePermissionSeeder extends Seeder
             Permission::findOrCreate($permission->value, self::GUARD);
         }
 
-        $admin = Role::findOrCreate(UserRole::Admin->value, self::GUARD);
-        // Peserta tanpa permission default: hak diberikan langsung per pengguna.
-        Role::findOrCreate(UserRole::Participant->value, self::GUARD);
+        // 1. Superadmin memegang seluruh permission sistem
+        $superadmin = Role::findOrCreate(UserRole::SuperAdmin->value, self::GUARD);
+        $superadmin->syncPermissions(PermissionName::values());
 
-        // Admin selalu memegang semua permission (terkunci, Q-2).
-        $admin->syncPermissions(PermissionName::values());
+        // 2. Admin memegang permission operasional asesmen
+        $admin = Role::findOrCreate(UserRole::Admin->value, self::GUARD);
+        $admin->syncPermissions(array_column(PermissionName::forRole(UserRole::Admin), 'value'));
+
+        // 3. Peserta tanpa permission default: hak diberikan langsung per pengguna.
+        Role::findOrCreate(UserRole::Participant->value, self::GUARD);
     }
 }

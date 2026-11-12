@@ -43,7 +43,7 @@ function Row({ label, value }: { label: string; value: ReactNode }) {
 }
 
 const roleLabel = (role: UserDetail['role']) =>
-    role === 'admin' ? 'Administrator' : 'Peserta';
+    role === 'superadmin' ? 'Super Admin' : role === 'admin' ? 'Administrator' : 'Peserta';
 
 /** Loads detail from the server only when opened for a given user id. */
 export function UserDetailDrawer({

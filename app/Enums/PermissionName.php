@@ -93,15 +93,33 @@ enum PermissionName: string
     }
 
     /**
-     * Permission yang boleh dimiliki sebuah role (admin = semua, peserta = grup Assessment).
+     * Permission yang boleh dimiliki sebuah role:
+     * - superadmin = seluruh permission sistem
+     * - admin = operasional asesmen, peserta, kuesioner, hasil, email log, perusahaan
+     * - participant = grup Assessment
      *
      * @return list<self>
      */
     public static function forRole(UserRole $role): array
     {
-        return $role === UserRole::Admin
-            ? self::cases()
-            : array_values(array_filter(self::cases(), fn (self $p) => $p->group() === 'Assessment'));
+        return match ($role) {
+            UserRole::SuperAdmin => self::cases(),
+            UserRole::Admin => array_values(array_filter(
+                self::cases(),
+                fn (self $p) => ! in_array($p, [
+                    self::UsersManage,
+                    self::UsersResetPassword,
+                    self::UsersRestore,
+                    self::RolesPermissionsManage,
+                    self::ActivityLogView,
+                    self::SettingsManage,
+                ], true)
+            )),
+            UserRole::Participant => array_values(array_filter(
+                self::cases(),
+                fn (self $p) => $p->group() === 'Assessment'
+            )),
+        };
     }
 
     /**
@@ -111,7 +129,11 @@ enum PermissionName: string
      */
     public static function defaultsFor(UserRole $role): array
     {
-        return $role === UserRole::Participant ? self::forRole($role) : [];
+        return match ($role) {
+            UserRole::SuperAdmin => self::forRole(UserRole::SuperAdmin),
+            UserRole::Admin => self::forRole(UserRole::Admin),
+            UserRole::Participant => self::forRole(UserRole::Participant),
+        };
     }
 
     /**

@@ -22,11 +22,15 @@ class AppServiceProvider extends ServiceProvider
     {
         Model::shouldBeStrict(! $this->app->isProduction());
 
-        Gate::before(fn (User $user) => $user->hasRole(UserRole::Admin->value) ? true : null);
+        Gate::before(fn (User $user) => $user->hasRole(UserRole::SuperAdmin->value) ? true : null);
 
         Route::model('participant', User::class);
 
         Inertia::handleExceptionsUsing(function (ExceptionResponse $response) {
+            if ($response->request->expectsJson() || $response->request->is('api/*')) {
+                return null;
+            }
+
             if (in_array($response->statusCode(), [401, 403, 404, 419, 429, 500, 503], true)) {
                 return $response->render('error', [
                     'status' => $response->statusCode(),

@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\PermissionName;
+use App\Enums\UserRole;
 use App\Models\Question;
 use App\Models\Rater;
 use App\Models\Setting;
@@ -25,24 +26,27 @@ it('idempotent: dua kali seed jumlah baris sama', function () {
         ->and(Setting::count())->toBe(4);
 });
 
-it('admin tidak dibuat bila config kosong dan dibuat terverifikasi bila terisi', function () {
-    config(['elq.admin' => ['name' => null, 'email' => null, 'password' => null]]);
+it('admin dan superadmin dibuat terverifikasi melalui seeder', function () {
     $this->seed([RolePermissionSeeder::class, AdminUserSeeder::class]);
-    expect(User::count())->toBe(0);
+    expect(User::count())->toBe(2);
 
-    config(['elq.admin' => ['name' => 'Adm', 'email' => 'Adm@X.test', 'password' => 'secret-123']]);
-    $this->seed(AdminUserSeeder::class);
-    $admin = User::first();
+    $superAdmin = User::where('email', 'superadmin@elq.test')->first();
+    expect($superAdmin)->not->toBeNull()
+        ->and($superAdmin->is_active)->toBeTrue()
+        ->and($superAdmin->email_verified_at)->not->toBeNull()
+        ->and($superAdmin->hasRole('superadmin'))->toBeTrue();
 
-    expect($admin->email)->toBe('adm@x.test')
+    $admin = User::where('email', 'admin@elq.test')->first();
+    expect($admin)->not->toBeNull()
         ->and($admin->is_active)->toBeTrue()
         ->and($admin->email_verified_at)->not->toBeNull()
         ->and($admin->hasRole('admin'))->toBeTrue();
 });
 
-it('admin punya semua permission dan role participant tanpa permission default', function () {
+it('superadmin punya semua permission, admin punya permission operasional, dan participant tanpa permission default', function () {
     $this->seed(RolePermissionSeeder::class);
-    expect(Role::findByName('admin')->permissions)->toHaveCount(count(PermissionName::cases()))
+    expect(Role::findByName('superadmin')->permissions)->toHaveCount(count(PermissionName::cases()))
+        ->and(Role::findByName('admin')->permissions)->toHaveCount(count(PermissionName::forRole(UserRole::Admin)))
         ->and(Role::findByName('participant')->permissions)->toHaveCount(0);
 });
 

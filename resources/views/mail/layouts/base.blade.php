@@ -51,7 +51,17 @@
                                         <table border="0" cellpadding="0" cellspacing="0" role="presentation">
                                             <tr>
                                                 <td valign="middle" style="padding-right: 14px;">
-                                                    <img src="{{ config('app.url') }}/image/Logo-PPM-01.png" height="32" style="height: 32px; width: auto; display: block; border: 0;" alt="PPM Manajemen" />
+                                                    @php
+                                                        $ppmLogoPath = public_path('image/Logo-PPM-01.png');
+                                                        if (isset($message) && method_exists($message, 'embed') && file_exists($ppmLogoPath)) {
+                                                            $ppmLogoSrc = $message->embed($ppmLogoPath);
+                                                        } elseif (file_exists($ppmLogoPath)) {
+                                                            $ppmLogoSrc = 'data:image/png;base64,' . base64_encode(file_get_contents($ppmLogoPath));
+                                                        } else {
+                                                            $ppmLogoSrc = asset('image/Logo-PPM-01.png');
+                                                        }
+                                                    @endphp
+                                                    <img src="{{ $ppmLogoSrc }}" height="32" style="height: 32px; width: auto; display: block; border: 0;" alt="PPM Manajemen" />
                                                 </td>
                                                 <td valign="middle" style="border-left: 1px solid #cbd5e1; padding-left: 14px;">
                                                     <div style="display: inline-block; vertical-align: middle;">

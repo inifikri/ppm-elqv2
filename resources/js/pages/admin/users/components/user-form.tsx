@@ -15,7 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { fieldA11y as a11y } from '@/components/master-form';
 import { cn } from '@/lib/utils';
 import { index } from '@/routes/admin/users';
-import type { EditableUser, PermissionGroup } from '@/types';
+import type { EditableUser, PermissionGroup, UserRoleType } from '@/types';
 import PhotoInput from './photo-input';
 import PermissionCheckboxes from './permission-checkboxes';
 
@@ -35,13 +35,17 @@ export default function UserForm({
     permissions,
 }: Props) {
     const isEdit = user !== undefined;
-    const [createRole, setCreateRole] = useState<'admin' | 'participant'>(
-        'participant',
-    );
+    const [createRole, setCreateRole] = useState<UserRoleType>('participant');
     const [password, setPassword] = useState('');
     const [passwordConfirmation, setPasswordConfirmation] = useState('');
-    const role = isEdit ? (user.role ?? 'participant') : createRole;
+    const role: UserRoleType = (isEdit ? (user.role ?? 'participant') : createRole) as UserRoleType;
     const isParticipant = role === 'participant';
+
+    const getRoleLabel = (r: string) => {
+        if (r === 'superadmin') return 'Super Admin';
+        if (r === 'admin') return 'Administrator';
+        return 'Peserta';
+    };
 
     return (
         <Form {...form} className="space-y-4" encType="multipart/form-data">
@@ -197,22 +201,20 @@ export default function UserForm({
                         <div className="grid content-start gap-2">
                             <Label id="role-label">Role</Label>
                             {isEdit ? (
-                                <p className="text-sm">
-                                    {role === 'admin'
-                                        ? 'Administrator'
-                                        : 'Peserta'}
+                                <p className="text-sm font-medium">
+                                    {getRoleLabel(role)}
                                 </p>
                             ) : (
                                 <div
-                                    className="flex gap-4 pointer-coarse:min-h-touch pointer-coarse:items-center"
+                                    className="flex flex-wrap gap-4 pointer-coarse:min-h-touch pointer-coarse:items-center"
                                     role="radiogroup"
                                     aria-labelledby="role-label"
                                 >
-                                    {(['participant', 'admin'] as const).map(
+                                    {(['participant', 'admin', 'superadmin'] as const).map(
                                         (r) => (
                                             <label
                                                 key={r}
-                                                className="flex items-center gap-2 text-sm"
+                                                className="flex items-center gap-2 text-sm cursor-pointer"
                                             >
                                                 <input
                                                     type="radio"
@@ -223,9 +225,7 @@ export default function UserForm({
                                                         setCreateRole(r)
                                                     }
                                                 />
-                                                {r === 'admin'
-                                                    ? 'Administrator'
-                                                    : 'Peserta'}
+                                                {getRoleLabel(r)}
                                             </label>
                                         ),
                                     )}

@@ -23,7 +23,9 @@ class LoginIdentifyController extends Controller
 
         $roleLabel = null;
         if ($user) {
-            if ($user->hasRole(UserRole::Admin->value)) {
+            if ($user->hasRole(UserRole::SuperAdmin->value)) {
+                $roleLabel = 'Super Admin';
+            } elseif ($user->hasRole(UserRole::Admin->value)) {
                 $roleLabel = 'Administrator';
             } elseif ($user->hasRole(UserRole::Participant->value)) {
                 $roleLabel = 'Peserta Assessment';

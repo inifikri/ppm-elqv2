@@ -6,21 +6,24 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
-    $this->admin = User::factory()->admin()->create();
+    $this->superadmin = User::factory()->superadmin()->create();
 });
 
-it('akses: tamu diarahkan ke login, peserta ditolak, admin diizinkan', function () {
+it('akses: tamu diarahkan ke login, peserta dan admin ditolak, superadmin diizinkan', function () {
     $this->get('/admin/activity-logs')->assertRedirect('/login');
 
     $participant = User::factory()->participant()->create();
     $this->actingAs($participant)->get('/admin/activity-logs')->assertForbidden();
 
-    $this->actingAs($this->admin)->get('/admin/activity-logs')->assertOk();
+    $admin = User::factory()->admin()->create();
+    $this->actingAs($admin)->get('/admin/activity-logs')->assertForbidden();
+
+    $this->actingAs($this->superadmin)->get('/admin/activity-logs')->assertOk();
 });
 
 it('menampilkan daftar log aktivitas dengan pagination dan filters', function () {
     activity('users')
-        ->causedBy($this->admin)
+        ->causedBy($this->superadmin)
         ->event('created')
         ->log('Membuat akun pengguna baru');
 
@@ -28,7 +31,7 @@ it('menampilkan daftar log aktivitas dengan pagination dan filters', function ()
         ->event('login_success')
         ->log('Pengguna berhasil masuk');
 
-    $this->actingAs($this->admin)
+    $this->actingAs($this->superadmin)
         ->get('/admin/activity-logs')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
@@ -41,7 +44,7 @@ it('menampilkan daftar log aktivitas dengan pagination dan filters', function ()
 
 it('filter berdasarkan search, log_name, dan event berfungsi', function () {
     activity('users')
-        ->causedBy($this->admin)
+        ->causedBy($this->superadmin)
         ->event('created')
         ->log('Membuat akun pengguna baru');
 
@@ -49,7 +52,7 @@ it('filter berdasarkan search, log_name, dan event berfungsi', function () {
         ->event('login_success')
         ->log('Pengguna berhasil masuk');
 
-    $res = $this->actingAs($this->admin)
+    $res = $this->actingAs($this->superadmin)
         ->get('/admin/activity-logs?log_name=users')
         ->assertOk();
 
@@ -57,7 +60,7 @@ it('filter berdasarkan search, log_name, dan event berfungsi', function () {
         ->where('activities.data.0.log_name', 'users')
     );
 
-    $resSearch = $this->actingAs($this->admin)
+    $resSearch = $this->actingAs($this->superadmin)
         ->get('/admin/activity-logs?search=masuk')
         ->assertOk();
 

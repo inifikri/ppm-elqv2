@@ -33,11 +33,12 @@ function participantWith(array $user = [], string $company = 'PT A', string $pos
     return $u;
 }
 
-it('akses: tamu, peserta, belum verified, admin', function () {
+it('akses: tamu, peserta, belum verified, admin, superadmin', function () {
     $this->get('/admin/users')->assertRedirect('/login');
     $this->actingAs(User::factory()->participant()->create())->get('/admin/users')->assertForbidden();
-    $this->actingAs(User::factory()->admin()->unverified()->create())->get('/admin/users')->assertRedirect();
-    $this->actingAs(User::factory()->admin()->create())->get('/admin/users')->assertOk();
+    $this->actingAs(User::factory()->admin()->create())->get('/admin/users')->assertForbidden();
+    $this->actingAs(User::factory()->superadmin()->unverified()->create())->get('/admin/users')->assertRedirect();
+    $this->actingAs(User::factory()->superadmin()->create())->get('/admin/users')->assertOk();
 });
 
 it('peserta dengan permission non-users.manage tetap 403', function () {
@@ -47,7 +48,7 @@ it('peserta dengan permission non-users.manage tetap 403', function () {
 });
 
 it('index: pagination 10 per halaman dan urutan stabil', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superadmin()->create();
     User::factory()->participant()->count(24)->create();
 
     $this->actingAs($admin)->get('/admin/users')
@@ -57,7 +58,7 @@ it('index: pagination 10 per halaman dan urutan stabil', function () {
 });
 
 it('index: search nama, email, telepon, perusahaan, jabatan; wildcard literal', function () {
-    $admin = User::factory()->admin()->create(['name' => 'Zed', 'email' => 'zed@x.test', 'phone' => '1']);
+    $admin = User::factory()->superadmin()->create(['name' => 'Zed', 'email' => 'zed@x.test', 'phone' => '1']);
     participantWith(['name' => 'Alpha', 'email' => 'a@x.test', 'phone' => '0811'], 'Acme Corp', 'Direktur');
     participantWith(['name' => 'Beta', 'email' => 'b@x.test', 'phone' => '0822'], 'Other', 'Staf');
     $count = fn (string $s) => $this->actingAs($admin)->get('/admin/users?search='.urlencode($s))->viewData('page')['props']['users']['data'];
@@ -72,7 +73,7 @@ it('index: search nama, email, telepon, perusahaan, jabatan; wildcard literal', 
 });
 
 it('store peserta: lowercase, hash, verified, firstOrCreate company, log permission', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superadmin()->create();
     Company::create(['name' => 'PT Maju']);
 
     $this->actingAs($admin)->post('/admin/users', payload())->assertRedirect('/admin/users');
@@ -86,21 +87,32 @@ it('store peserta: lowercase, hash, verified, firstOrCreate company, log permiss
         ->and(Activity::where('log_name', 'users')->where('description', 'permissions')->exists())->toBeTrue();
 });
 
-it('store admin: tanpa permission langsung; tolak permission luar Assessment; email duplikat', function () {
-    $admin = User::factory()->admin()->create();
+it('store admin dan superadmin: permission divalidasi sesuai role; email duplikat', function () {
+    $superadmin = User::factory()->superadmin()->create();
 
-    $this->actingAs($admin)->post('/admin/users', payload(['role' => 'admin', 'email' => 'adm2@x.test', 'permissions' => ['users.manage']]))
+    // 1. Store Superadmin dengan users.manage berhasil
+    $this->actingAs($superadmin)->post('/admin/users', payload(['role' => 'superadmin', 'email' => 'super2@x.test', 'permissions' => ['users.manage']]))
         ->assertRedirect('/admin/users');
-    expect(User::where('email', 'adm2@x.test')->first()->getDirectPermissions())->toHaveCount(0);
 
-    $this->actingAs($admin)->post('/admin/users', payload(['permissions' => ['users.manage']]))
+    // 2. Store Admin dengan participants.view berhasil
+    $this->actingAs($superadmin)->post('/admin/users', payload(['role' => 'admin', 'email' => 'adm2@x.test', 'permissions' => ['participants.view']]))
+        ->assertRedirect('/admin/users');
+
+    // 3. Admin ditolak bila diberi permission khusus superadmin (users.manage)
+    $this->actingAs($superadmin)->post('/admin/users', payload(['role' => 'admin', 'email' => 'adm3@x.test', 'permissions' => ['users.manage']]))
         ->assertSessionHasErrors('permissions.0');
-    $this->actingAs($admin)->post('/admin/users', payload(['email' => 'ADM2@x.test', 'role' => 'admin']))
+
+    // 4. Peserta ditolak bila diberi permission di luar Assessment
+    $this->actingAs($superadmin)->post('/admin/users', payload(['role' => 'participant', 'permissions' => ['users.manage']]))
+        ->assertSessionHasErrors('permissions.0');
+
+    // 5. Tolak email duplikat case-insensitive
+    $this->actingAs($superadmin)->post('/admin/users', payload(['email' => 'ADM2@x.test', 'role' => 'admin']))
         ->assertSessionHasErrors('email');
 });
 
 it('update: password kosong tetap, role tetap, sync permission, verified tetap, tolak nonaktif diri', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superadmin()->create();
     $u = participantWith();
     $u->givePermissionTo('raters.manage-own');
     $hash = $u->password;
@@ -123,8 +135,8 @@ it('update: password kosong tetap, role tetap, sync permission, verified tetap, 
     expect($admin->fresh()->is_active)->toBeTrue();
 });
 
-it('destroy: soft delete; tolak diri sendiri dan admin aktif terakhir', function () {
-    $admin = User::factory()->admin()->create();
+it('destroy: soft delete; tolak diri sendiri dan superadmin aktif terakhir', function () {
+    $admin = User::factory()->superadmin()->create();
     $u = participantWith();
 
     $this->actingAs($admin)->delete("/admin/users/{$u->id}")->assertRedirect('/admin/users');
@@ -134,15 +146,15 @@ it('destroy: soft delete; tolak diri sendiri dan admin aktif terakhir', function
     $this->actingAs($admin)->delete("/admin/users/{$admin->id}")->assertRedirect();
     expect($admin->fresh()->trashed())->toBeFalse();
 
-    $other = User::factory()->admin()->create();
-    $this->actingAs($other)->delete("/admin/users/{$admin->id}")->assertRedirect(); // ada 2 admin: boleh
+    $other = User::factory()->superadmin()->create();
+    $this->actingAs($other)->delete("/admin/users/{$admin->id}")->assertRedirect(); // ada 2 superadmin: boleh
     expect($admin->fresh()->trashed())->toBeTrue();
     $this->actingAs($other)->delete("/admin/users/{$other->id}")->assertRedirect();
     expect($other->fresh()->trashed())->toBeFalse();
 });
 
 it('admin aktif terakhir tidak bisa dihapus orang lain', function () {
-    $lastAdmin = User::factory()->admin()->create();
+    $lastAdmin = User::factory()->superadmin()->create();
     $manager = User::factory()->participant()->create();
     $manager->givePermissionTo('users.manage');
 
@@ -151,7 +163,7 @@ it('admin aktif terakhir tidak bisa dihapus orang lain', function () {
 });
 
 it('bulk: campuran, dilewati dilaporkan, validasi', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superadmin()->create();
     [$a, $b] = [participantWith(), participantWith()];
 
     $this->actingAs($admin)->post('/admin/users/bulk', ['action' => 'deactivate', 'ids' => [$a->id, $admin->id, $b->id]])->assertRedirect();
@@ -168,20 +180,21 @@ it('bulk: campuran, dilewati dilaporkan, validasi', function () {
 });
 
 it('activity log tidak memuat data sensitif', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superadmin()->create();
     $this->actingAs($admin)->post('/admin/users', payload());
 
     $json = Activity::all()->map(fn ($a) => $a->properties->toJson())->implode('');
     expect($json)->not->toContain('password')->not->toContain('remember_token')->not->toContain('two_factor');
 });
 
-it('detail pengguna: JSON read-only tanpa data sensitif, hanya admin', function () {
+it('detail pengguna: JSON read-only tanpa data sensitif, hanya superadmin', function () {
     $target = participantWith(['last_login_at' => now()], 'PT Detail', 'Direktur');
 
     $this->getJson("/admin/users/{$target->id}/detail")->assertUnauthorized();
     $this->actingAs(User::factory()->participant()->create())->getJson("/admin/users/{$target->id}/detail")->assertForbidden();
+    $this->actingAs(User::factory()->admin()->create())->getJson("/admin/users/{$target->id}/detail")->assertForbidden();
 
-    $response = $this->actingAs(User::factory()->admin()->create())->getJson("/admin/users/{$target->id}/detail")
+    $response = $this->actingAs(User::factory()->superadmin()->create())->getJson("/admin/users/{$target->id}/detail")
         ->assertOk()
         ->assertJsonPath('data.company', 'PT Detail')
         ->assertJsonPath('data.position', 'Direktur')
@@ -192,7 +205,7 @@ it('detail pengguna: JSON read-only tanpa data sensitif, hanya admin', function 
 
 it('foto: simpan jpg/png <=2MB, tolak format salah dan >2MB, ganti hapus file lama', function () {
     Storage::fake('public');
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superadmin()->create();
 
     $this->actingAs($admin)->post('/admin/users', payload(['photo' => UploadedFile::fake()->create('a.gif', 10, 'image/gif')]))
         ->assertSessionHasErrors('photo');

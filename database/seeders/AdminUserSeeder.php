@@ -5,32 +5,48 @@ namespace Database\Seeders;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        $email = config('elq.admin.email');
-        $password = config('elq.admin.password');
+        $defaultPassword = Hash::make('Password123#');
 
-        if (blank($email) || blank($password)) {
-            $this->command?->warn('AdminUserSeeder dilewati: ADMIN_EMAIL / ADMIN_PASSWORD belum diisi.');
+        // 1. Akun Super Administrator (Root System)
+        $superAdminEmail = strtolower((string) (config('elq.admin.superadmin_email') ?: 'superadmin@elq.test'));
+        $superAdmin = User::withTrashed()->firstOrNew(['email' => $superAdminEmail]);
+        $superAdmin->fill([
+            'name' => 'Super Administrator',
+            'password' => $defaultPassword,
+        ]);
+        $superAdmin->forceFill([
+            'is_active' => true,
+            'email_verified_at' => $superAdmin->email_verified_at ?? now(),
+        ])->save();
 
-            return;
+        if ($superAdmin->trashed()) {
+            $superAdmin->restore();
         }
+        $superAdmin->syncRoles([UserRole::SuperAdmin->value]);
 
-        $admin = User::withTrashed()->firstOrNew(['email' => strtolower($email)]);
+        // 2. Akun Administrator (Operasional Asesmen)
+        $adminEmail = strtolower((string) (config('elq.admin.email') ?: 'admin@elq.test'));
+        $admin = User::withTrashed()->firstOrNew(['email' => $adminEmail]);
         $admin->fill([
             'name' => config('elq.admin.name') ?: 'Administrator',
-            'password' => $password,
+            'password' => config('elq.admin.password') ? Hash::make(config('elq.admin.password')) : $defaultPassword,
         ]);
-        // is_active & verifikasi diisi eksplisit: akun admin langsung terverifikasi (Q-4).
-        $admin->forceFill(['is_active' => true, 'email_verified_at' => $admin->email_verified_at ?? now()])->save();
+        $admin->forceFill([
+            'is_active' => true,
+            'email_verified_at' => $admin->email_verified_at ?? now(),
+        ])->save();
 
         if ($admin->trashed()) {
             $admin->restore();
         }
+        $admin->syncRoles([UserRole::Admin->value]);
 
-        $admin->syncRoles(UserRole::Admin->value);
+        $this->command?->info('AdminUserSeeder berhasil: Akun Superadmin (superadmin@elq.test) dan Admin (admin@elq.test) siap digunakan.');
     }
 }

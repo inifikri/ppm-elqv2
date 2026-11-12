@@ -18,8 +18,13 @@ beforeEach(function () {
         Permission::findOrCreate($permission->value, 'web');
     }
 
+    $superadminRole = Role::findOrCreate(UserRole::SuperAdmin->value, 'web');
+    $superadminRole->syncPermissions(PermissionName::values());
+
     $adminRole = Role::findOrCreate(UserRole::Admin->value, 'web');
-    $adminRole->syncPermissions(PermissionName::values());
+    $adminRole->syncPermissions(
+        array_column(PermissionName::forRole(UserRole::Admin), 'value')
+    );
 
     $participantRole = Role::findOrCreate(UserRole::Participant->value, 'web');
     $participantRole->syncPermissions(
@@ -27,16 +32,21 @@ beforeEach(function () {
     );
 });
 
-test('participant role cannot access users management', function () {
+test('participant and admin roles cannot access users management', function () {
     $participant = User::factory()->participant()->create();
+    $admin = User::factory()->admin()->create();
 
     $this->actingAs($participant)
         ->get(route('admin.users.index'))
         ->assertForbidden();
+
+    $this->actingAs($admin)
+        ->get(route('admin.users.index'))
+        ->assertForbidden();
 });
 
-test('admin can view users index and search users', function () {
-    $admin = User::factory()->admin()->create();
+test('superadmin can view users index and search users', function () {
+    $admin = User::factory()->superadmin()->create();
     $target = User::factory()->create(['name' => 'Budi Santoso']);
 
     $this->actingAs($admin)
@@ -48,8 +58,8 @@ test('admin can view users index and search users', function () {
         );
 });
 
-test('admin can view users create page', function () {
-    $admin = User::factory()->admin()->create();
+test('superadmin can view users create page', function () {
+    $admin = User::factory()->superadmin()->create();
 
     $this->actingAs($admin)
         ->get(route('admin.users.create'))
@@ -59,10 +69,10 @@ test('admin can view users create page', function () {
         );
 });
 
-test('admin can trigger password reset link for user', function () {
+test('superadmin can trigger password reset link for user', function () {
     Notification::fake();
 
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superadmin()->create();
     $user = User::factory()->create(['email' => 'karyawan@example.com']);
 
     $this->actingAs($admin)
@@ -76,8 +86,8 @@ test('admin can trigger password reset link for user', function () {
     )->toBeTrue();
 });
 
-test('admin can soft delete and restore user from trash', function () {
-    $admin = User::factory()->admin()->create();
+test('superadmin can soft delete and restore user from trash', function () {
+    $admin = User::factory()->superadmin()->create();
     $target = User::factory()->create();
 
     // Soft delete
@@ -95,8 +105,8 @@ test('admin can soft delete and restore user from trash', function () {
     expect($target->fresh()->trashed())->toBeFalse();
 });
 
-test('admin can bulk restore users from trash', function () {
-    $admin = User::factory()->admin()->create();
+test('superadmin can bulk restore users from trash', function () {
+    $admin = User::factory()->superadmin()->create();
     $users = User::factory()->count(3)->create();
 
     foreach ($users as $user) {
@@ -115,8 +125,8 @@ test('admin can bulk restore users from trash', function () {
     }
 });
 
-test('admin cannot delete themselves', function () {
-    $admin = User::factory()->admin()->create();
+test('superadmin cannot delete themselves', function () {
+    $admin = User::factory()->superadmin()->create();
 
     $this->actingAs($admin)
         ->delete(route('admin.users.destroy', $admin))
@@ -126,7 +136,7 @@ test('admin cannot delete themselves', function () {
 });
 
 test('user creation succeeds with only name email password and role', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superadmin()->create();
 
     $this->actingAs($admin)
         ->post(route('admin.users.store'), [
@@ -143,8 +153,8 @@ test('user creation succeeds with only name email password and role', function (
     expect($created->name)->toBe('Peserta Baru');
 });
 
-test('admin can view user detail page', function () {
-    $admin = User::factory()->admin()->create();
+test('superadmin can view user detail page', function () {
+    $admin = User::factory()->superadmin()->create();
     $target = User::factory()->participant()->create();
 
     $this->actingAs($admin)
@@ -157,8 +167,8 @@ test('admin can view user detail page', function () {
         );
 });
 
-test('admin can update user without providing company and position', function () {
-    $admin = User::factory()->admin()->create();
+test('superadmin can update user without providing company and position', function () {
+    $admin = User::factory()->superadmin()->create();
     $target = User::factory()->participant()->create();
 
     $this->actingAs($admin)
@@ -172,8 +182,8 @@ test('admin can update user without providing company and position', function ()
     expect($target->fresh()->name)->toBe('Nama Baru');
 });
 
-test('admin can force delete user and purge associated records while preserving activity log', function () {
-    $admin = User::factory()->admin()->create();
+test('superadmin can force delete user and purge associated records while preserving activity log', function () {
+    $admin = User::factory()->superadmin()->create();
     $target = User::factory()->participant()->create();
     $targetId = $target->id;
 
@@ -192,8 +202,8 @@ test('admin can force delete user and purge associated records while preserving 
     expect(Activity::where('subject_id', $targetId)->exists())->toBeTrue();
 });
 
-test('admin cannot force delete themselves', function () {
-    $admin = User::factory()->admin()->create();
+test('superadmin cannot force delete themselves', function () {
+    $admin = User::factory()->superadmin()->create();
 
     $this->actingAs($admin)
         ->delete(route('admin.users.force-delete', $admin))
@@ -202,8 +212,8 @@ test('admin cannot force delete themselves', function () {
     expect(User::find($admin->id))->not->toBeNull();
 });
 
-test('admin can bulk force delete users from trash', function () {
-    $admin = User::factory()->admin()->create();
+test('superadmin can bulk force delete users from trash', function () {
+    $admin = User::factory()->superadmin()->create();
     $users = User::factory()->count(2)->create();
     $ids = $users->pluck('id')->all();
 

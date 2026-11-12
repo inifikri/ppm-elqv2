@@ -188,11 +188,22 @@ export default function UsersTable({
                                 </TableCell>
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>
-                                    <Badge variant="secondary">
-                                        {user.role === 'admin'
-                                            ? 'Admin'
-                                            : 'Peserta'}
-                                    </Badge>
+                                    {user.role === 'superadmin' ? (
+                                        <Badge
+                                            variant="secondary"
+                                            className="bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800"
+                                        >
+                                            Super Admin
+                                        </Badge>
+                                    ) : user.role === 'admin' ? (
+                                        <Badge variant="secondary">
+                                            Admin
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-muted-foreground">
+                                            Peserta
+                                        </Badge>
+                                    )}
                                 </TableCell>
                                 <TableCell>
                                     <StatusBadge

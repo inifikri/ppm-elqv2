@@ -13,16 +13,19 @@ use Spatie\Activitylog\Models\Activity;
 beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
     $this->seed(SettingSeeder::class);
-    $this->admin = User::factory()->admin()->create();
+    $this->superadmin = User::factory()->superadmin()->create();
 });
 
-it('akses: tamu diarahkan ke login, peserta ditolak 403, admin diizinkan 200', function () {
+it('akses: tamu diarahkan ke login, peserta dan admin ditolak 403, superadmin diizinkan 200', function () {
     $this->get('/admin/settings/retention')->assertRedirect('/login');
 
     $participant = User::factory()->participant()->create();
     $this->actingAs($participant)->get('/admin/settings/retention')->assertForbidden();
 
-    $this->actingAs($this->admin)->get('/admin/settings/retention')->assertOk();
+    $admin = User::factory()->admin()->create();
+    $this->actingAs($admin)->get('/admin/settings/retention')->assertForbidden();
+
+    $this->actingAs($this->superadmin)->get('/admin/settings/retention')->assertOk();
 });
 
 it('menampilkan halaman konfigurasi retensi log dan statistik ringkasan', function () {
@@ -37,7 +40,7 @@ it('menampilkan halaman konfigurasi retensi log dan statistik ringkasan', functi
         'created_at' => now()->subDays(45),
     ]);
 
-    $this->actingAs($this->admin)
+    $this->actingAs($this->superadmin)
         ->get('/admin/settings/retention')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
@@ -62,8 +65,8 @@ it('menampilkan halaman konfigurasi retensi log dan statistik ringkasan', functi
         );
 });
 
-it('admin dapat memperbarui pengaturan retensi log', function () {
-    $response = $this->actingAs($this->admin)
+it('superadmin dapat memperbarui pengaturan retensi log', function () {
+    $response = $this->actingAs($this->superadmin)
         ->put('/admin/settings/retention', [
             'activity_log_purge_enabled' => true,
             'activity_log_retention_days' => 90,
@@ -81,7 +84,7 @@ it('admin dapat memperbarui pengaturan retensi log', function () {
 });
 
 it('validasi gagal jika retention_days bernilai negatif atau bukan integer', function () {
-    $this->actingAs($this->admin)
+    $this->actingAs($this->superadmin)
         ->from('/admin/settings/retention')
         ->put('/admin/settings/retention', [
             'activity_log_purge_enabled' => true,
@@ -120,7 +123,7 @@ it('manual purge menghapus log yang lebih tua dari batas retensi dan mempertahan
     ]);
 
     // Execute purge target 'activity'
-    $this->actingAs($this->admin)
+    $this->actingAs($this->superadmin)
         ->post('/admin/settings/retention/purge', ['target' => 'activity'])
         ->assertRedirect('/admin/settings/retention')
         ->assertSessionHasNoErrors();
@@ -131,7 +134,7 @@ it('manual purge menghapus log yang lebih tua dari batas retensi dan mempertahan
     expect(EmailLog::find($oldEmail->id))->not->toBeNull();
 
     // Execute purge target 'email'
-    $this->actingAs($this->admin)
+    $this->actingAs($this->superadmin)
         ->post('/admin/settings/retention/purge', ['target' => 'email'])
         ->assertRedirect('/admin/settings/retention')
         ->assertSessionHasNoErrors();

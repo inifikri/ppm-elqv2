@@ -1,3 +1,5 @@
+export type UserRoleType = 'superadmin' | 'admin' | 'participant';
+
 export type ManagedUser = {
     id: number;
     name: string;
@@ -5,7 +7,7 @@ export type ManagedUser = {
     phone: string | null;
     avatar?: string | null;
     is_active: boolean;
-    role: 'admin' | 'participant' | null;
+    role: UserRoleType | null;
     company?: string | null;
     position?: string | null;
     email_verified: boolean;
@@ -42,7 +44,7 @@ export type EditableUser = {
     email: string;
     phone: string | null;
     is_active: boolean;
-    role: 'admin' | 'participant' | null;
+    role: UserRoleType | null;
     avatar: string | null;
     company_name: string | null;
     position: string | null;
@@ -64,7 +66,7 @@ export type UserDetail = {
     phone: string | null;
     avatar: string | null;
     is_active: boolean;
-    role: 'admin' | 'participant' | null;
+    role: UserRoleType | null;
     company: string | null;
     position: string | null;
     email_verified?: boolean;

@@ -183,11 +183,22 @@ export default function UserShow({
                                     {user.email}
                                 </p>
                                 <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                                    <Badge variant="secondary">
-                                        {user.role === "admin"
-                                            ? "Administrator"
-                                            : "Peserta"}
-                                    </Badge>
+                                    {user.role === "superadmin" ? (
+                                        <Badge
+                                            variant="secondary"
+                                            className="bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800"
+                                        >
+                                            Super Admin
+                                        </Badge>
+                                    ) : user.role === "admin" ? (
+                                        <Badge variant="secondary">
+                                            Administrator
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-muted-foreground">
+                                            Peserta
+                                        </Badge>
+                                    )}
                                     <StatusBadge
                                         status={activeStatus(user.is_active)}
                                     />

@@ -32,7 +32,9 @@ class UpdateUserRequest extends FormRequest
     {
         /** @var User $target */
         $target = $this->route('user');
-        $role = $target->hasRole(UserRole::Admin->value) ? UserRole::Admin : UserRole::Participant;
+        $role = $target->hasRole(UserRole::SuperAdmin->value)
+            ? UserRole::SuperAdmin
+            : ($target->hasRole(UserRole::Admin->value) ? UserRole::Admin : UserRole::Participant);
 
         return [
             'name' => ['required', 'string', 'max:255'],
